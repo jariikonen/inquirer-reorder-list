@@ -29,7 +29,8 @@
   "scripts": {
     "attw": "attw --pack",
     "tsc": "tshy",
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "dev": "tshy --watch"
   },
   "dependencies": {
     "@inquirer/core": "^10.0.0",
