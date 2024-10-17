@@ -217,6 +217,38 @@ async function keyHandler<Value>(
   }
 }
 
+function renderItem<Value>(
+  {
+    item,
+    isActive,
+  }: {
+    item: Item<Value>;
+    index: number;
+    isActive: boolean;
+  },
+  theme: Prettify<Theme<CheckboxTheme>>,
+  setDescription: (newValue?: string | undefined) => void
+) {
+  if (Separator.isSeparator(item)) {
+    return ` ${item.separator}`;
+  }
+
+  if (item.disabled) {
+    const disabledLabel =
+      typeof item.disabled === "string" ? item.disabled : "(disabled)";
+    return theme.style.disabledChoice(`${item.name} ${disabledLabel}`);
+  }
+
+  if (isActive) {
+    setDescription(item.description);
+  }
+
+  const checkbox = item.checked ? theme.icon.checked : theme.icon.unchecked;
+  const color = isActive ? theme.style.highlight : (x: string) => x;
+  const cursor = isActive ? theme.icon.cursor : " ";
+  return color(`${cursor}${checkbox} ${item.name}`);
+}
+
 function getHelpTips<Value>(
   theme: Prettify<Theme<CheckboxTheme>>,
   showHelpTip: boolean,
@@ -376,32 +408,12 @@ export default createPrompt(
       )
     );
 
-    let description;
+    const [description, setDescription] = useState<string>();
+
     const page = usePagination({
       items,
       active,
-      renderItem({ item, isActive }) {
-        if (Separator.isSeparator(item)) {
-          return ` ${item.separator}`;
-        }
-
-        if (item.disabled) {
-          const disabledLabel =
-            typeof item.disabled === "string" ? item.disabled : "(disabled)";
-          return theme.style.disabledChoice(`${item.name} ${disabledLabel}`);
-        }
-
-        if (isActive) {
-          description = item.description;
-        }
-
-        const checkbox = item.checked
-          ? theme.icon.checked
-          : theme.icon.unchecked;
-        const color = isActive ? theme.style.highlight : (x: string) => x;
-        const cursor = isActive ? theme.icon.cursor : " ";
-        return color(`${cursor}${checkbox} ${item.name}`);
-      },
+      renderItem: (layout) => renderItem(layout, theme, setDescription),
       pageSize,
       loop,
     });
