@@ -16,8 +16,9 @@ import {
   Separator,
   type Theme,
   type Status,
+  KeypressEvent,
 } from "@inquirer/core";
-import type { PartialDeep } from "@inquirer/type";
+import type { PartialDeep, Prettify } from "@inquirer/type";
 import colors from "yoctocolors-cjs";
 import figures from "@inquirer/figures";
 import ansiEscapes from "ansi-escapes";
@@ -77,7 +78,7 @@ type CheckboxConfig<
   Value,
   ChoicesObject =
     | ReadonlyArray<string | Separator>
-    | ReadonlyArray<Choice<Value> | Separator>
+    | ReadonlyArray<Choice<Value> | Separator>,
 > = {
   message: string;
   prefix?: string;
@@ -146,6 +147,180 @@ function normalizeChoices<Value>(
   });
 }
 
+async function keyHandler<Value>(
+  key: KeypressEvent,
+  items: readonly Item<Value>[],
+  setItems: (newValue: readonly Item<Value>[]) => void,
+  validate: (
+    choices: readonly Choice<Value>[]
+  ) => boolean | string | Promise<string | boolean>,
+  required: CheckboxConfig<Value>["required"],
+  setError: (newValue?: string | undefined) => void,
+  setStatus: (newValue: Status) => void,
+  done: (value: Array<Value>) => void,
+  loop: CheckboxConfig<Value>["loop"],
+  active: number,
+  setActive: (newValue: number) => void,
+  bounds: {
+    first: number;
+    last: number;
+  },
+  setShowHelpTip: (newValue: boolean) => void
+) {
+  if (isEnterKey(key)) {
+    const selection = items.filter(isChecked);
+    const isValid = await validate([...selection]);
+    if (required && !items.some(isChecked)) {
+      setError("At least one choice must be selected");
+    } else if (isValid === true) {
+      setStatus("done");
+      done(selection.map((choice) => choice.value));
+    } else {
+      setError(isValid || "You must select a valid value");
+    }
+  } else if (isUpKey(key) || isDownKey(key)) {
+    if (
+      loop ||
+      (isUpKey(key) && active !== bounds.first) ||
+      (isDownKey(key) && active !== bounds.last)
+    ) {
+      const offset = isUpKey(key) ? -1 : 1;
+      let next = active;
+      do {
+        next = (next + offset + items.length) % items.length;
+      } while (!isSelectable(items[next]!));
+      setActive(next);
+    }
+  } else if (isSpaceKey(key)) {
+    setError(undefined);
+    setShowHelpTip(false);
+    setItems(
+      items.map((choice, i) => (i === active ? toggle(choice) : choice))
+    );
+  } else if (key.name === "a") {
+    const selectAll = items.some(
+      (choice) => isSelectable(choice) && !choice.checked
+    );
+    setItems(items.map(check(selectAll)));
+  } else if (key.name === "i") {
+    setItems(items.map(toggle));
+  } else if (isNumberKey(key)) {
+    // Adjust index to start at 1
+    const position = Number(key.name) - 1;
+    const item = items[position];
+    if (item != null && isSelectable(item)) {
+      setActive(position);
+      setItems(
+        items.map((choice, i) => (i === position ? toggle(choice) : choice))
+      );
+    }
+  }
+}
+
+function getHelpTips<Value>(
+  theme: Prettify<Theme<CheckboxTheme>>,
+  showHelpTip: boolean,
+  instructions: string | boolean | undefined,
+  items: readonly Item<Value>[],
+  pageSize: number,
+  firstRender: {
+    current: boolean;
+  }
+) {
+  let helpTipTop = "";
+  let helpTipBottom = "";
+  if (
+    theme.helpMode === "always" ||
+    (theme.helpMode === "auto" &&
+      showHelpTip &&
+      (instructions === undefined || instructions))
+  ) {
+    if (typeof instructions === "string") {
+      helpTipTop = instructions;
+    } else {
+      const keys = [
+        `${theme.style.key("space")} to select`,
+        `${theme.style.key("a")} to toggle all`,
+        `${theme.style.key("i")} to invert selection`,
+        `and ${theme.style.key("enter")} to proceed`,
+      ];
+      helpTipTop = ` (Press ${keys.join(", ")})`;
+    }
+
+    if (
+      items.length > pageSize &&
+      (theme.helpMode === "always" ||
+        (theme.helpMode === "auto" && firstRender.current))
+    ) {
+      helpTipBottom = `\n${theme.style.help(
+        "(Use arrow keys to reveal more choices)"
+      )}`;
+      firstRender.current = false;
+    }
+  }
+  return [helpTipTop, helpTipBottom];
+}
+
+function getFinalPrompt<Value>(
+  items: readonly Item<Value>[],
+  theme: Prettify<Theme<CheckboxTheme>>,
+  prefix: string,
+  message: string
+) {
+  const selection = items.filter(isChecked);
+  const answer = theme.style.answer(
+    theme.style.renderSelectedChoices(selection, items)
+  );
+
+  return `${prefix} ${message} ${answer}`;
+}
+
+function getPrompt<Value>(
+  theme: Prettify<Theme<CheckboxTheme>>,
+  showHelpTip: boolean,
+  instructions: string | boolean | undefined,
+  items: readonly Item<Value>[],
+  pageSize: number,
+  firstRender: {
+    current: boolean;
+  },
+  description: string | undefined,
+  errorMsg: string | undefined,
+  prefix: string,
+  config: CheckboxConfig<Value>,
+  status: Status,
+  page: string
+) {
+  const message = theme.style.message(config.message, status);
+
+  if (status === "done") {
+    return getFinalPrompt(items, theme, prefix, message);
+  }
+
+  const [helpTipTop, helpTipBottom] = getHelpTips(
+    theme,
+    showHelpTip,
+    instructions,
+    items,
+    pageSize,
+    firstRender
+  );
+
+  const choiceDescription = description
+    ? `\n${theme.style.description(description)}`
+    : ``;
+
+  let error = "";
+  if (errorMsg) {
+    error = `\n${theme.style.error(errorMsg)}`;
+  }
+
+  return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}`;
+}
+
+/**
+ * The rendering function wrapped into a createPrompt() function.
+ */
 export default createPrompt(
   <Value>(
     config: CheckboxConfig<Value>,
@@ -183,58 +358,23 @@ export default createPrompt(
     const [showHelpTip, setShowHelpTip] = useState(true);
     const [errorMsg, setError] = useState<string>();
 
-    useKeypress(async (key) => {
-      if (isEnterKey(key)) {
-        const selection = items.filter(isChecked);
-        const isValid = await validate([...selection]);
-        if (required && !items.some(isChecked)) {
-          setError("At least one choice must be selected");
-        } else if (isValid === true) {
-          setStatus("done");
-          done(selection.map((choice) => choice.value));
-        } else {
-          setError(isValid || "You must select a valid value");
-        }
-      } else if (isUpKey(key) || isDownKey(key)) {
-        if (
-          loop ||
-          (isUpKey(key) && active !== bounds.first) ||
-          (isDownKey(key) && active !== bounds.last)
-        ) {
-          const offset = isUpKey(key) ? -1 : 1;
-          let next = active;
-          do {
-            next = (next + offset + items.length) % items.length;
-          } while (!isSelectable(items[next]!));
-          setActive(next);
-        }
-      } else if (isSpaceKey(key)) {
-        setError(undefined);
-        setShowHelpTip(false);
-        setItems(
-          items.map((choice, i) => (i === active ? toggle(choice) : choice))
-        );
-      } else if (key.name === "a") {
-        const selectAll = items.some(
-          (choice) => isSelectable(choice) && !choice.checked
-        );
-        setItems(items.map(check(selectAll)));
-      } else if (key.name === "i") {
-        setItems(items.map(toggle));
-      } else if (isNumberKey(key)) {
-        // Adjust index to start at 1
-        const position = Number(key.name) - 1;
-        const item = items[position];
-        if (item != null && isSelectable(item)) {
-          setActive(position);
-          setItems(
-            items.map((choice, i) => (i === position ? toggle(choice) : choice))
-          );
-        }
-      }
-    });
-
-    const message = theme.style.message(config.message, status);
+    useKeypress((key) =>
+      keyHandler(
+        key,
+        items,
+        setItems,
+        validate,
+        required,
+        setError,
+        setStatus,
+        done,
+        loop,
+        active,
+        setActive,
+        bounds,
+        setShowHelpTip
+      )
+    );
 
     let description;
     const page = usePagination({
@@ -266,57 +406,20 @@ export default createPrompt(
       loop,
     });
 
-    if (status === "done") {
-      const selection = items.filter(isChecked);
-      const answer = theme.style.answer(
-        theme.style.renderSelectedChoices(selection, items)
-      );
-
-      return `${prefix} ${message} ${answer}`;
-    }
-
-    let helpTipTop = "";
-    let helpTipBottom = "";
-    if (
-      theme.helpMode === "always" ||
-      (theme.helpMode === "auto" &&
-        showHelpTip &&
-        (instructions === undefined || instructions))
-    ) {
-      if (typeof instructions === "string") {
-        helpTipTop = instructions;
-      } else {
-        const keys = [
-          `${theme.style.key("space")} to select`,
-          `${theme.style.key("a")} to toggle all`,
-          `${theme.style.key("i")} to invert selection`,
-          `and ${theme.style.key("enter")} to proceed`,
-        ];
-        helpTipTop = ` (Press ${keys.join(", ")})`;
-      }
-
-      if (
-        items.length > pageSize &&
-        (theme.helpMode === "always" ||
-          (theme.helpMode === "auto" && firstRender.current))
-      ) {
-        helpTipBottom = `\n${theme.style.help(
-          "(Use arrow keys to reveal more choices)"
-        )}`;
-        firstRender.current = false;
-      }
-    }
-
-    const choiceDescription = description
-      ? `\n${theme.style.description(description)}`
-      : ``;
-
-    let error = "";
-    if (errorMsg) {
-      error = `\n${theme.style.error(errorMsg)}`;
-    }
-
-    return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}`;
+    return getPrompt(
+      theme,
+      showHelpTip,
+      instructions,
+      items,
+      pageSize,
+      firstRender,
+      description,
+      errorMsg,
+      prefix,
+      config,
+      status,
+      page
+    );
   }
 );
 
