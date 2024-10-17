@@ -1,9 +1,12 @@
 {
   "name": "inquirer-sortable-list",
   "version": "0.0.0",
-  "author": "Jari Ikonen",
-  "description": "Inquirer sortable list prompt",
   "license": "MIT",
+  "author": "Jari Ikonen",
+  "contributors": [
+    "Simon Boudrias <admin@simonboudrias.com>"
+  ],
+  "description": "Inquirer sortable list prompt",
   "exports": {
     "./package.json": "./package.json",
     ".": {
