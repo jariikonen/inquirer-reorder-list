@@ -227,7 +227,9 @@ function renderItem<Value>(
     isActive: boolean;
   },
   theme: Prettify<Theme<CheckboxTheme>>,
-  setDescription: (newValue?: string | undefined) => void
+  descriptionRef: {
+    current: string | undefined;
+  }
 ) {
   if (Separator.isSeparator(item)) {
     return ` ${item.separator}`;
@@ -240,7 +242,7 @@ function renderItem<Value>(
   }
 
   if (isActive) {
-    setDescription(item.description);
+    descriptionRef.current = item.description;
   }
 
   const checkbox = item.checked ? theme.icon.checked : theme.icon.unchecked;
@@ -316,7 +318,9 @@ function getPrompt<Value>(
   firstRender: {
     current: boolean;
   },
-  description: string | undefined,
+  descriptionRef: {
+    current: string | undefined;
+  },
   errorMsg: string | undefined,
   prefix: string,
   config: CheckboxConfig<Value>,
@@ -338,8 +342,8 @@ function getPrompt<Value>(
     firstRender
   );
 
-  const choiceDescription = description
-    ? `\n${theme.style.description(description)}`
+  const choiceDescription = descriptionRef.current
+    ? `\n${theme.style.description(descriptionRef.current)}`
     : ``;
 
   let error = "";
@@ -408,12 +412,12 @@ export default createPrompt(
       )
     );
 
-    const [description, setDescription] = useState<string>();
+    const descriptionRef = useRef<string>();
 
     const page = usePagination({
       items,
       active,
-      renderItem: (layout) => renderItem(layout, theme, setDescription),
+      renderItem: (layout) => renderItem(layout, theme, descriptionRef),
       pageSize,
       loop,
     });
@@ -425,7 +429,7 @@ export default createPrompt(
       items,
       pageSize,
       firstRender,
-      description,
+      descriptionRef,
       errorMsg,
       prefix,
       config,
