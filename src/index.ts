@@ -147,8 +147,28 @@ function normalizeChoices<Value>(
   });
 }
 
+function addToDebugMsg(
+  newMsg: string,
+  debugMsgRef?: { current: string | undefined },
+  newLine = false
+) {
+  const separator = newLine ? "\n" : ", ";
+  if (debugMsgRef) {
+    debugMsgRef.current = debugMsgRef.current
+      ? `${debugMsgRef.current}${separator}<${newMsg}>`
+      : `<${newMsg}>`;
+  }
+}
+
+interface KeyEvent {
+  ctrl: boolean;
+  meta: boolean;
+  shift: boolean;
+  name: string;
+}
+
 async function keyHandler<Value>(
-  key: KeypressEvent,
+  keypressEvent: KeypressEvent,
   items: readonly Item<Value>[],
   setItems: (newValue: readonly Item<Value>[]) => void,
   validate: (
@@ -165,8 +185,17 @@ async function keyHandler<Value>(
     first: number;
     last: number;
   },
-  setShowHelpTip: (newValue: boolean) => void
+  setShowHelpTip: (newValue: boolean) => void,
+  debugMsgRef?: {
+    current: string | undefined;
+  }
 ) {
+  const key = keypressEvent as KeyEvent;
+  addToDebugMsg(
+    `ctrl: ${key.ctrl}, meta: ${key.meta}, shift: ${key.shift}, name: ${key.name}`,
+    debugMsgRef,
+    true
+  );
   if (isEnterKey(key)) {
     const selection = items.filter(isChecked);
     const isValid = await validate([...selection]);
@@ -325,7 +354,10 @@ function getPrompt<Value>(
   prefix: string,
   config: CheckboxConfig<Value>,
   status: Status,
-  page: string
+  page: string,
+  debugMsgRef: {
+    current: string | undefined;
+  }
 ) {
   const message = theme.style.message(config.message, status);
 
@@ -351,7 +383,13 @@ function getPrompt<Value>(
     error = `\n${theme.style.error(errorMsg)}`;
   }
 
-  return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}`;
+  let debugMsg = "";
+  if (debugMsgRef.current) {
+    debugMsg = `\n${debugMsgRef.current}`;
+    debugMsgRef.current = "";
+  }
+
+  return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}${debugMsg}`;
 }
 
 /**
@@ -393,6 +431,7 @@ export default createPrompt(
     const [active, setActive] = useState(bounds.first);
     const [showHelpTip, setShowHelpTip] = useState(true);
     const [errorMsg, setError] = useState<string>();
+    const debugMsgRef = useRef<string>();
 
     useKeypress((key) =>
       keyHandler(
@@ -408,7 +447,8 @@ export default createPrompt(
         active,
         setActive,
         bounds,
-        setShowHelpTip
+        setShowHelpTip,
+        debugMsgRef
       )
     );
 
@@ -434,7 +474,8 @@ export default createPrompt(
       prefix,
       config,
       status,
-      page
+      page,
+      debugMsgRef
     );
   }
 );
