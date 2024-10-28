@@ -147,24 +147,327 @@ function normalizeChoices<Value>(
   });
 }
 
-function addToDebugMsg(
-  newMsg: string,
-  debugMsgRef?: { current: string | undefined },
-  newLine = false
-) {
-  const separator = newLine ? "\n" : ", ";
-  if (debugMsgRef) {
+/* function createAddToDebugMsg(debugMsgRef: { current: string }) {
+  return (newMsg: string, newLine = false) => {
+    const separator = newLine ? "\n" : ", ";
     debugMsgRef.current = debugMsgRef.current
       ? `${debugMsgRef.current}${separator}<${newMsg}>`
       : `<${newMsg}>`;
-  }
-}
+  };
+} */
 
 interface KeyEvent {
+  sequence: string;
   ctrl: boolean;
   meta: boolean;
   shift: boolean;
   name: string;
+  code: string;
+}
+
+const isLeftKey = (key: KeyEvent): boolean =>
+  // The left arrow
+  key.name === "left" ||
+  // Vim keybinding
+  key.name === "h";
+
+const isRightKey = (key: KeyEvent): boolean =>
+  // The right arrow
+  key.name === "right" ||
+  // Vim keybinding
+  key.name === "l";
+
+const isUpOrLeftKey = (key: KeyEvent): boolean =>
+  isUpKey(key) || isLeftKey(key);
+
+const isDownOrRightKey = (key: KeyEvent): boolean =>
+  isDownKey(key) || isRightKey(key);
+
+const isVerticalKey = (key: KeyEvent): boolean =>
+  isUpKey(key) || isDownKey(key);
+
+const isHorizontalKey = (key: KeyEvent): boolean =>
+  isLeftKey(key) || isRightKey(key);
+
+const isMoveCommandKey = (key: KeyEvent): boolean => key.name === "m";
+
+const isTopKey = (key: KeyEvent): boolean =>
+  key.name === "pageup" || key.name === "t";
+
+const isBottomKey = (key: KeyEvent): boolean =>
+  key.name === "pagedown" || key.name === "b";
+
+const isTopOrBottomKey = (key: KeyEvent): boolean =>
+  isTopKey(key) || isBottomKey(key);
+
+function getTopmostSelectable<Value>(items: readonly Item<Value>[]) {
+  let index = -1;
+  do {
+    index = (index + 1 + items.length) % items.length;
+  } while (!isSelectable(items[index]!));
+  return index;
+}
+
+function getBottommostSelectable<Value>(items: readonly Item<Value>[]) {
+  let index = items.length;
+  do {
+    index = (index - 1 + items.length) % items.length;
+  } while (!isSelectable(items[index]!));
+  return index;
+}
+
+function getNext<Value>(
+  key: KeyEvent,
+  itemIndex: number,
+  items: readonly Item<Value>[],
+  dragging = false
+) {
+  if ((isTopKey(key) || isBottomKey(key)) && dragging) {
+    return isTopKey(key) ? 0 : items.length - 1;
+  }
+  if ((isTopKey(key) || isBottomKey(key)) && !dragging) {
+    return isTopKey(key)
+      ? getTopmostSelectable(items)
+      : getBottommostSelectable(items);
+  }
+
+  const offset = isUpOrLeftKey(key) ? -1 : 1;
+
+  if (dragging) {
+    return (itemIndex + offset + items.length) % items.length;
+  }
+
+  let next = itemIndex;
+  do {
+    next = (next + offset + items.length) % items.length;
+  } while (!isSelectable(items[next]!));
+  return next;
+}
+
+function areConsecutive(indices: number[]) {
+  return indices.every((value: number, index: number, array: number[]) => {
+    return array[index - 1] !== undefined
+      ? value - array[index - 1]! === 1
+      : true;
+  });
+}
+
+function getCheckedItems<Value>(items: readonly Item<Value>[]) {
+  let indices: number[] = [];
+  const checkedItems = items.filter((item, i) => {
+    const checked = isChecked(item);
+    if (checked) {
+      indices.push(i);
+    }
+    return checked;
+  });
+  return {
+    checkedItems,
+    indices,
+    consecutive: areConsecutive(indices),
+  };
+}
+
+function getUncheckedItems<Value>(items: readonly Item<Value>[]) {
+  let uncheckedIndices: number[] = [];
+  const uncheckedItems = items.filter((item, i) => {
+    const unchecked = !isChecked(item);
+    if (unchecked) {
+      uncheckedIndices.push(i);
+    }
+    return unchecked;
+  });
+  return { uncheckedItems, uncheckedIndices };
+}
+
+function getActiveOffset<Value>(
+  key: KeyEvent,
+  items: readonly Item<Value>[],
+  activeItem: Item<Value>
+) {
+  let index: number | null = items.findIndex(
+    (item: Item<Value>) => item === activeItem
+  );
+  index = index >= 0 ? index : null;
+  if (isUpOrLeftKey(key)) {
+    return index;
+  }
+  return index !== null ? index - items.length + 1 : index;
+}
+
+// active offset is relative to direction where item is being moved
+function invertActiveOffset(
+  offset: number | null,
+  numberOfItems: number,
+  up: boolean
+) {
+  let newOffset = offset;
+  if (offset !== null) {
+    newOffset = up ? offset - numberOfItems + 1 : offset + (numberOfItems - 1);
+  }
+  return newOffset;
+}
+
+function moveUpFromUpperBound<Value>(
+  items: readonly Item<Value>[],
+  numberOfMovingItems: number,
+  movingItems: readonly Item<Value>[],
+  activeOffset: number | null
+) {
+  const newItems = [...items.slice(numberOfMovingItems), ...movingItems];
+  const newActiveOffset = invertActiveOffset(
+    activeOffset,
+    numberOfMovingItems,
+    true
+  );
+  return { newItems, activeOffset: newActiveOffset };
+}
+
+function moveDownFromLowerBound<Value>(
+  items: readonly Item<Value>[],
+  numberOfMovingItems: number,
+  movingItems: readonly Item<Value>[],
+  activeOffset: number | null
+) {
+  const newItems = [
+    ...movingItems,
+    ...items.slice(0, items.length - numberOfMovingItems),
+  ];
+  const newActiveOffset = invertActiveOffset(
+    activeOffset,
+    numberOfMovingItems,
+    false
+  );
+  return { newItems, activeOffset: newActiveOffset };
+}
+
+function moveInTheMiddle<Value>(
+  key: KeyEvent,
+  next: number,
+  items: readonly Item<Value>[],
+  movingItems: readonly Item<Value>[]
+) {
+  const before = isUpOrLeftKey(key)
+    ? items.slice(0, next)
+    : items.slice(0, next - movingItems.length);
+  const after = isUpOrLeftKey(key)
+    ? items.slice(next + movingItems.length + 1)
+    : items.slice(next + 1);
+  const replacedItem = items[next]!;
+  return isUpOrLeftKey(key)
+    ? [...before, ...movingItems, replacedItem, ...after]
+    : [...before, replacedItem, ...movingItems, ...after];
+}
+
+function moveItems<Value>(
+  key: KeyEvent,
+  active: number,
+  setActive: (newValue: number) => void,
+  items: readonly Item<Value>[],
+  setItems: (newValue: readonly Item<Value>[]) => void
+) {
+  const currentActive = active;
+  const activeItem = items[currentActive]!;
+
+  const { checkedItems, indices, consecutive } = getCheckedItems(items);
+  let numberOfMovingItems = 1;
+  let activeOffset: number | null = null;
+  if (
+    (isUpKey(key) || isDownKey(key)) &&
+    isChecked(activeItem) &&
+    checkedItems.length > 1
+  ) {
+    numberOfMovingItems = checkedItems.length;
+    activeOffset = getActiveOffset(key, checkedItems, activeItem);
+  }
+  const topmostChecked = indices[0]!;
+  const bottommostChecked = indices[indices.length - 1]!;
+  let next = getNext(key, active, items, true);
+  let newItems: Item<Value>[] = [];
+
+  // move consecutive selected items, single selected item or active unselected item
+  if (
+    !isMoveCommandKey(key) &&
+    ((isChecked(activeItem) && consecutive && !isTopOrBottomKey(key)) ||
+      (isChecked(activeItem) && !consecutive && isHorizontalKey(key)) ||
+      (!isChecked(activeItem) && !isTopOrBottomKey(key)) ||
+      (checkedItems.length === 0 && !isTopOrBottomKey(key)))
+  ) {
+    const movingItems = numberOfMovingItems > 1 ? checkedItems : [activeItem];
+    let leading = active;
+    if (numberOfMovingItems > 1) {
+      next = isUpOrLeftKey(key)
+        ? getNext(key, topmostChecked, items, true)
+        : getNext(key, bottommostChecked, items, true);
+      leading = isUpOrLeftKey(key) ? topmostChecked : bottommostChecked;
+    }
+    if (isUpOrLeftKey(key) && leading === 0) {
+      ({ newItems, activeOffset } = moveUpFromUpperBound(
+        items,
+        numberOfMovingItems,
+        movingItems,
+        activeOffset
+      ));
+    } else if (isDownOrRightKey(key) && leading === items.length - 1) {
+      ({ newItems, activeOffset } = moveDownFromLowerBound(
+        items,
+        numberOfMovingItems,
+        movingItems,
+        activeOffset
+      ));
+    } else {
+      newItems = moveInTheMiddle(key, next, items, movingItems);
+    }
+    const newActive = activeOffset ? next + activeOffset : next;
+    setActive(newActive);
+    setItems(newItems);
+  }
+
+  // place selected items with m key
+  else if (isMoveCommandKey(key)) {
+    const { uncheckedIndices } = getUncheckedItems(items);
+    const beforeIndices = uncheckedIndices.filter((index) => index < active);
+    const beforeItems = items.filter((_, i) => beforeIndices.includes(i));
+    const afterIndices = uncheckedIndices.filter((index) => index >= active);
+    const afterItems = items.filter((_, i) => afterIndices.includes(i));
+    newItems = [...beforeItems, ...checkedItems, ...afterItems];
+    setItems(newItems);
+    const newActive = newItems.findIndex((item) => item === checkedItems[0]);
+    setActive(newActive);
+  }
+
+  // move nonconsecutive selected items with up or down keys
+  else if (!consecutive && isVerticalKey(key) && isChecked(activeItem)) {
+    next = isUpKey(key) ? topmostChecked : bottommostChecked;
+    const { uncheckedIndices } = getUncheckedItems(items);
+    const beforeIndices = uncheckedIndices.filter((index) => index < next);
+    const beforeItems = items.filter((_, i) => beforeIndices.includes(i));
+    const afterIndices = uncheckedIndices.filter((index) => index > next);
+    const afterItems = items.filter((_, i) => afterIndices.includes(i));
+    newItems = [...beforeItems, ...checkedItems, ...afterItems];
+    const newActive = newItems.findIndex((item) => item === activeItem);
+    setItems(newItems);
+    setActive(newActive);
+  }
+
+  // move to top or bottom with top and bottom keys
+  else if (isTopOrBottomKey(key)) {
+    let newActive = active;
+    if (isChecked(activeItem)) {
+      const { uncheckedItems } = getUncheckedItems(items);
+      newItems = isTopKey(key)
+        ? [...checkedItems, ...uncheckedItems]
+        : [...uncheckedItems, ...checkedItems];
+      newActive = newItems.findIndex((item) => item === activeItem);
+    } else {
+      newItems = isTopKey(key)
+        ? [activeItem, ...items.filter((item) => item !== activeItem)]
+        : [...items.filter((item) => item !== activeItem), activeItem];
+      newActive = isTopKey(key) ? 0 : items.length - 1;
+    }
+    setItems(newItems);
+    setActive(newActive);
+  }
 }
 
 async function keyHandler<Value>(
@@ -185,17 +488,9 @@ async function keyHandler<Value>(
     first: number;
     last: number;
   },
-  setShowHelpTip: (newValue: boolean) => void,
-  debugMsgRef?: {
-    current: string | undefined;
-  }
+  setShowHelpTip: (newValue: boolean) => void
 ) {
   const key = keypressEvent as KeyEvent;
-  addToDebugMsg(
-    `ctrl: ${key.ctrl}, meta: ${key.meta}, shift: ${key.shift}, name: ${key.name}`,
-    debugMsgRef,
-    true
-  );
   if (isEnterKey(key)) {
     const selection = items.filter(isChecked);
     const isValid = await validate([...selection]);
@@ -207,18 +502,25 @@ async function keyHandler<Value>(
     } else {
       setError(isValid || "You must select a valid value");
     }
-  } else if (isUpKey(key) || isDownKey(key)) {
+  } else if (
+    isUpKey(key) ||
+    isDownKey(key) ||
+    isLeftKey(key) ||
+    isRightKey(key) ||
+    isTopKey(key) ||
+    isBottomKey(key) ||
+    isMoveCommandKey(key)
+  ) {
     if (
       loop ||
-      (isUpKey(key) && active !== bounds.first) ||
-      (isDownKey(key) && active !== bounds.last)
+      (isUpOrLeftKey(key) && active !== bounds.first) ||
+      (isDownOrRightKey(key) && active !== bounds.last)
     ) {
-      const offset = isUpKey(key) ? -1 : 1;
-      let next = active;
-      do {
-        next = (next + offset + items.length) % items.length;
-      } while (!isSelectable(items[next]!));
-      setActive(next);
+      if (key.ctrl || key.meta || key.shift || isMoveCommandKey(key)) {
+        moveItems(key, active, setActive, items, setItems);
+      } else {
+        setActive(getNext(key, active, items));
+      }
     }
   } else if (isSpaceKey(key)) {
     setError(undefined);
@@ -305,6 +607,11 @@ function getHelpTips<Value>(
         `${theme.style.key("space")} to select`,
         `${theme.style.key("a")} to toggle all`,
         `${theme.style.key("i")} to invert selection`,
+        `${theme.style.key("pgup/t or pgdown/b")} to move cursor to top or bottom`,
+        `${theme.style.key("shift + arrow up or down")} to move items`,
+        `${theme.style.key("shift + arrow left or right")} to move single items`,
+        `${theme.style.key("shift + pgup/t or pgdown/b")} to move items to top or bottom`,
+        `${theme.style.key("m")} to move selected items to the cursor position`,
         `and ${theme.style.key("enter")} to proceed`,
       ];
       helpTipTop = ` (Press ${keys.join(", ")})`;
@@ -355,9 +662,7 @@ function getPrompt<Value>(
   config: CheckboxConfig<Value>,
   status: Status,
   page: string,
-  debugMsgRef: {
-    current: string | undefined;
-  }
+  debugMsgRef: { current: string }
 ) {
   const message = theme.style.message(config.message, status);
 
@@ -383,13 +688,13 @@ function getPrompt<Value>(
     error = `\n${theme.style.error(errorMsg)}`;
   }
 
-  let debugMsg = "";
-  if (debugMsgRef.current) {
-    debugMsg = `\n${debugMsgRef.current}`;
+  let debugOutput = "";
+  if (debugMsgRef.current.length > 0) {
+    debugOutput = `\n${debugMsgRef.current}`;
     debugMsgRef.current = "";
   }
 
-  return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}${debugMsg}`;
+  return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}${debugOutput}`;
 }
 
 /**
@@ -431,7 +736,8 @@ export default createPrompt(
     const [active, setActive] = useState(bounds.first);
     const [showHelpTip, setShowHelpTip] = useState(true);
     const [errorMsg, setError] = useState<string>();
-    const debugMsgRef = useRef<string>();
+    const debugMsgRef = useRef<string>("");
+    /* const addToDebugMsg = createAddToDebugMsg(debugMsgRef); */
 
     useKeypress((key) =>
       keyHandler(
@@ -447,8 +753,7 @@ export default createPrompt(
         active,
         setActive,
         bounds,
-        setShowHelpTip,
-        debugMsgRef
+        setShowHelpTip
       )
     );
 
