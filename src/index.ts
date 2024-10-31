@@ -17,11 +17,11 @@ import {
   type Theme,
   type Status,
   KeypressEvent,
-} from "@inquirer/core";
-import type { PartialDeep, Prettify } from "@inquirer/type";
-import colors from "yoctocolors-cjs";
-import figures from "@inquirer/figures";
-import ansiEscapes from "ansi-escapes";
+} from '@inquirer/core';
+import type { PartialDeep, Prettify } from '@inquirer/type';
+import colors from 'yoctocolors-cjs';
+import figures from '@inquirer/figures';
+import ansiEscapes from 'ansi-escapes';
 
 type CheckboxTheme = {
   icon: {
@@ -33,11 +33,11 @@ type CheckboxTheme = {
     disabledChoice: (text: string) => string;
     renderSelectedChoices: <T>(
       selectedChoices: ReadonlyArray<NormalizedChoice<T>>,
-      allChoices: ReadonlyArray<NormalizedChoice<T> | Separator>
+      allChoices: ReadonlyArray<NormalizedChoice<T> | Separator>,
     ) => string;
     description: (text: string) => string;
   };
-  helpMode: "always" | "never" | "auto";
+  helpMode: 'always' | 'never' | 'auto';
 };
 
 const checkboxTheme: CheckboxTheme = {
@@ -49,10 +49,10 @@ const checkboxTheme: CheckboxTheme = {
   style: {
     disabledChoice: (text: string) => colors.dim(`- ${text}`),
     renderSelectedChoices: (selectedChoices) =>
-      selectedChoices.map((choice) => choice.short).join(", "),
+      selectedChoices.map((choice) => choice.short).join(', '),
     description: (text: string) => colors.cyan(text),
   },
-  helpMode: "auto",
+  helpMode: 'auto',
 };
 
 type Choice<Value> = {
@@ -90,16 +90,14 @@ type CheckboxConfig<
   loop?: boolean;
   required?: boolean;
   validate?: (
-    choices: ReadonlyArray<Choice<Value>>
+    choices: ReadonlyArray<Choice<Value>>,
   ) => boolean | string | Promise<string | boolean>;
   theme?: PartialDeep<Theme<CheckboxTheme>>;
 };
 
 type Item<Value> = NormalizedChoice<Value> | Separator;
 
-function isSelectable<Value>(
-  item: Item<Value>
-): item is NormalizedChoice<Value> {
+function isSelectable<Value>(item: Item<Value>): item is NormalizedChoice<Value> {
   return !Separator.isSeparator(item) && !item.disabled;
 }
 
@@ -118,14 +116,12 @@ function check(checked: boolean) {
 }
 
 function normalizeChoices<Value>(
-  choices:
-    | ReadonlyArray<string | Separator>
-    | ReadonlyArray<Choice<Value> | Separator>
+  choices: ReadonlyArray<string | Separator> | ReadonlyArray<Choice<Value> | Separator>,
 ): Item<Value>[] {
   return choices.map((choice) => {
     if (Separator.isSeparator(choice)) return choice;
 
-    if (typeof choice === "string") {
+    if (typeof choice === 'string') {
       return {
         value: choice as Value,
         name: choice,
@@ -167,38 +163,32 @@ interface KeyEvent {
 
 const isLeftKey = (key: KeyEvent): boolean =>
   // The left arrow
-  key.name === "left" ||
+  key.name === 'left' ||
   // Vim keybinding
-  key.name === "h";
+  key.name === 'h';
 
 const isRightKey = (key: KeyEvent): boolean =>
   // The right arrow
-  key.name === "right" ||
+  key.name === 'right' ||
   // Vim keybinding
-  key.name === "l";
+  key.name === 'l';
 
-const isUpOrLeftKey = (key: KeyEvent): boolean =>
-  isUpKey(key) || isLeftKey(key);
+const isUpOrLeftKey = (key: KeyEvent): boolean => isUpKey(key) || isLeftKey(key);
 
-const isDownOrRightKey = (key: KeyEvent): boolean =>
-  isDownKey(key) || isRightKey(key);
+const isDownOrRightKey = (key: KeyEvent): boolean => isDownKey(key) || isRightKey(key);
 
-const isVerticalKey = (key: KeyEvent): boolean =>
-  isUpKey(key) || isDownKey(key);
+const isVerticalKey = (key: KeyEvent): boolean => isUpKey(key) || isDownKey(key);
 
-const isHorizontalKey = (key: KeyEvent): boolean =>
-  isLeftKey(key) || isRightKey(key);
+const isHorizontalKey = (key: KeyEvent): boolean => isLeftKey(key) || isRightKey(key);
 
-const isMoveCommandKey = (key: KeyEvent): boolean => key.name === "m";
+const isMoveCommandKey = (key: KeyEvent): boolean => key.name === 'm';
 
-const isTopKey = (key: KeyEvent): boolean =>
-  key.name === "pageup" || key.name === "t";
+const isTopKey = (key: KeyEvent): boolean => key.name === 'pageup' || key.name === 't';
 
 const isBottomKey = (key: KeyEvent): boolean =>
-  key.name === "pagedown" || key.name === "b";
+  key.name === 'pagedown' || key.name === 'b';
 
-const isTopOrBottomKey = (key: KeyEvent): boolean =>
-  isTopKey(key) || isBottomKey(key);
+const isTopOrBottomKey = (key: KeyEvent): boolean => isTopKey(key) || isBottomKey(key);
 
 function getTopmostSelectable<Value>(items: readonly Item<Value>[]) {
   let index = -1;
@@ -220,15 +210,13 @@ function getNext<Value>(
   key: KeyEvent,
   itemIndex: number,
   items: readonly Item<Value>[],
-  dragging = false
+  dragging = false,
 ) {
   if ((isTopKey(key) || isBottomKey(key)) && dragging) {
     return isTopKey(key) ? 0 : items.length - 1;
   }
   if ((isTopKey(key) || isBottomKey(key)) && !dragging) {
-    return isTopKey(key)
-      ? getTopmostSelectable(items)
-      : getBottommostSelectable(items);
+    return isTopKey(key) ? getTopmostSelectable(items) : getBottommostSelectable(items);
   }
 
   const offset = isUpOrLeftKey(key) ? -1 : 1;
@@ -246,14 +234,12 @@ function getNext<Value>(
 
 function areConsecutive(indices: number[]) {
   return indices.every((value: number, index: number, array: number[]) => {
-    return array[index - 1] !== undefined
-      ? value - array[index - 1]! === 1
-      : true;
+    return array[index - 1] === undefined ? true : value - array[index - 1]! === 1;
   });
 }
 
 function getCheckedItems<Value>(items: readonly Item<Value>[]) {
-  let indices: number[] = [];
+  const indices: number[] = [];
   const checkedItems = items.filter((item, i) => {
     const checked = isChecked(item);
     if (checked) {
@@ -269,7 +255,7 @@ function getCheckedItems<Value>(items: readonly Item<Value>[]) {
 }
 
 function getUncheckedItems<Value>(items: readonly Item<Value>[]) {
-  let uncheckedIndices: number[] = [];
+  const uncheckedIndices: number[] = [];
   const uncheckedItems = items.filter((item, i) => {
     const unchecked = !isChecked(item);
     if (unchecked) {
@@ -283,24 +269,18 @@ function getUncheckedItems<Value>(items: readonly Item<Value>[]) {
 function getActiveOffset<Value>(
   key: KeyEvent,
   items: readonly Item<Value>[],
-  activeItem: Item<Value>
+  activeItem: Item<Value>,
 ) {
-  let index: number | null = items.findIndex(
-    (item: Item<Value>) => item === activeItem
-  );
+  let index: number | null = items.indexOf(activeItem);
   index = index >= 0 ? index : null;
   if (isUpOrLeftKey(key)) {
     return index;
   }
-  return index !== null ? index - items.length + 1 : index;
+  return index === null ? index : index - items.length + 1;
 }
 
 // active offset is relative to direction where item is being moved
-function invertActiveOffset(
-  offset: number | null,
-  numberOfItems: number,
-  up: boolean
-) {
+function invertActiveOffset(offset: number | null, numberOfItems: number, up: boolean) {
   let newOffset = offset;
   if (offset !== null) {
     newOffset = up ? offset - numberOfItems + 1 : offset + (numberOfItems - 1);
@@ -312,14 +292,10 @@ function moveUpFromUpperBound<Value>(
   items: readonly Item<Value>[],
   numberOfMovingItems: number,
   movingItems: readonly Item<Value>[],
-  activeOffset: number | null
+  activeOffset: number | null,
 ) {
   const newItems = [...items.slice(numberOfMovingItems), ...movingItems];
-  const newActiveOffset = invertActiveOffset(
-    activeOffset,
-    numberOfMovingItems,
-    true
-  );
+  const newActiveOffset = invertActiveOffset(activeOffset, numberOfMovingItems, true);
   return { newItems, activeOffset: newActiveOffset };
 }
 
@@ -327,17 +303,13 @@ function moveDownFromLowerBound<Value>(
   items: readonly Item<Value>[],
   numberOfMovingItems: number,
   movingItems: readonly Item<Value>[],
-  activeOffset: number | null
+  activeOffset: number | null,
 ) {
   const newItems = [
     ...movingItems,
     ...items.slice(0, items.length - numberOfMovingItems),
   ];
-  const newActiveOffset = invertActiveOffset(
-    activeOffset,
-    numberOfMovingItems,
-    false
-  );
+  const newActiveOffset = invertActiveOffset(activeOffset, numberOfMovingItems, false);
   return { newItems, activeOffset: newActiveOffset };
 }
 
@@ -345,7 +317,7 @@ function moveInTheMiddle<Value>(
   key: KeyEvent,
   next: number,
   items: readonly Item<Value>[],
-  movingItems: readonly Item<Value>[]
+  movingItems: readonly Item<Value>[],
 ) {
   const before = isUpOrLeftKey(key)
     ? items.slice(0, next)
@@ -364,7 +336,7 @@ function moveItems<Value>(
   active: number,
   setActive: (newValue: number) => void,
   items: readonly Item<Value>[],
-  setItems: (newValue: readonly Item<Value>[]) => void
+  setItems: (newValue: readonly Item<Value>[]) => void,
 ) {
   const currentActive = active;
   const activeItem = items[currentActive]!;
@@ -381,7 +353,7 @@ function moveItems<Value>(
     activeOffset = getActiveOffset(key, checkedItems, activeItem);
   }
   const topmostChecked = indices[0]!;
-  const bottommostChecked = indices[indices.length - 1]!;
+  const bottommostChecked = indices.at(-1)!;
   let next = getNext(key, active, items, true);
   let newItems: Item<Value>[] = [];
 
@@ -406,14 +378,14 @@ function moveItems<Value>(
         items,
         numberOfMovingItems,
         movingItems,
-        activeOffset
+        activeOffset,
       ));
     } else if (isDownOrRightKey(key) && leading === items.length - 1) {
       ({ newItems, activeOffset } = moveDownFromLowerBound(
         items,
         numberOfMovingItems,
         movingItems,
-        activeOffset
+        activeOffset,
       ));
     } else {
       newItems = moveInTheMiddle(key, next, items, movingItems);
@@ -426,13 +398,13 @@ function moveItems<Value>(
   // place selected items with m key
   else if (isMoveCommandKey(key)) {
     const { uncheckedIndices } = getUncheckedItems(items);
-    const beforeIndices = uncheckedIndices.filter((index) => index < active);
-    const beforeItems = items.filter((_, i) => beforeIndices.includes(i));
-    const afterIndices = uncheckedIndices.filter((index) => index >= active);
-    const afterItems = items.filter((_, i) => afterIndices.includes(i));
+    const beforeIndices = new Set(uncheckedIndices.filter((index) => index < active));
+    const beforeItems = items.filter((_, i) => beforeIndices.has(i));
+    const afterIndices = new Set(uncheckedIndices.filter((index) => index >= active));
+    const afterItems = items.filter((_, i) => afterIndices.has(i));
     newItems = [...beforeItems, ...checkedItems, ...afterItems];
     setItems(newItems);
-    const newActive = newItems.findIndex((item) => item === checkedItems[0]);
+    const newActive = newItems.indexOf(checkedItems[0]!);
     setActive(newActive);
   }
 
@@ -440,12 +412,12 @@ function moveItems<Value>(
   else if (!consecutive && isVerticalKey(key) && isChecked(activeItem)) {
     next = isUpKey(key) ? topmostChecked : bottommostChecked;
     const { uncheckedIndices } = getUncheckedItems(items);
-    const beforeIndices = uncheckedIndices.filter((index) => index < next);
-    const beforeItems = items.filter((_, i) => beforeIndices.includes(i));
-    const afterIndices = uncheckedIndices.filter((index) => index > next);
-    const afterItems = items.filter((_, i) => afterIndices.includes(i));
+    const beforeIndices = new Set(uncheckedIndices.filter((index) => index < next));
+    const beforeItems = items.filter((_, i) => beforeIndices.has(i));
+    const afterIndices = new Set(uncheckedIndices.filter((index) => index > next));
+    const afterItems = items.filter((_, i) => afterIndices.has(i));
     newItems = [...beforeItems, ...checkedItems, ...afterItems];
-    const newActive = newItems.findIndex((item) => item === activeItem);
+    const newActive = newItems.indexOf(activeItem);
     setItems(newItems);
     setActive(newActive);
   }
@@ -458,7 +430,7 @@ function moveItems<Value>(
       newItems = isTopKey(key)
         ? [...checkedItems, ...uncheckedItems]
         : [...uncheckedItems, ...checkedItems];
-      newActive = newItems.findIndex((item) => item === activeItem);
+      newActive = newItems.indexOf(activeItem);
     } else {
       newItems = isTopKey(key)
         ? [activeItem, ...items.filter((item) => item !== activeItem)]
@@ -475,32 +447,32 @@ async function keyHandler<Value>(
   items: readonly Item<Value>[],
   setItems: (newValue: readonly Item<Value>[]) => void,
   validate: (
-    choices: readonly Choice<Value>[]
+    choices: readonly Choice<Value>[],
   ) => boolean | string | Promise<string | boolean>,
-  required: CheckboxConfig<Value>["required"],
-  setError: (newValue?: string | undefined) => void,
+  required: CheckboxConfig<Value>['required'],
+  setError: (newValue?: string) => void,
   setStatus: (newValue: Status) => void,
   done: (value: Array<Value>) => void,
-  loop: CheckboxConfig<Value>["loop"],
+  loop: CheckboxConfig<Value>['loop'],
   active: number,
   setActive: (newValue: number) => void,
   bounds: {
     first: number;
     last: number;
   },
-  setShowHelpTip: (newValue: boolean) => void
+  setShowHelpTip: (newValue: boolean) => void,
 ) {
   const key = keypressEvent as KeyEvent;
   if (isEnterKey(key)) {
     const selection = items.filter(isChecked);
     const isValid = await validate([...selection]);
     if (required && !items.some(isChecked)) {
-      setError("At least one choice must be selected");
+      setError('At least one choice must be selected');
     } else if (isValid === true) {
-      setStatus("done");
+      setStatus('done');
       done(selection.map((choice) => choice.value));
     } else {
-      setError(isValid || "You must select a valid value");
+      setError(isValid || 'You must select a valid value');
     }
   } else if (
     isUpKey(key) ||
@@ -525,15 +497,11 @@ async function keyHandler<Value>(
   } else if (isSpaceKey(key)) {
     setError(undefined);
     setShowHelpTip(false);
-    setItems(
-      items.map((choice, i) => (i === active ? toggle(choice) : choice))
-    );
-  } else if (key.name === "a") {
-    const selectAll = items.some(
-      (choice) => isSelectable(choice) && !choice.checked
-    );
+    setItems(items.map((choice, i) => (i === active ? toggle(choice) : choice)));
+  } else if (key.name === 'a') {
+    const selectAll = items.some((choice) => isSelectable(choice) && !choice.checked);
     setItems(items.map(check(selectAll)));
-  } else if (key.name === "i") {
+  } else if (key.name === 'i') {
     setItems(items.map(toggle));
   } else if (isNumberKey(key)) {
     // Adjust index to start at 1
@@ -541,9 +509,7 @@ async function keyHandler<Value>(
     const item = items[position];
     if (item != null && isSelectable(item)) {
       setActive(position);
-      setItems(
-        items.map((choice, i) => (i === position ? toggle(choice) : choice))
-      );
+      setItems(items.map((choice, i) => (i === position ? toggle(choice) : choice)));
     }
   }
 }
@@ -560,7 +526,7 @@ function renderItem<Value>(
   theme: Prettify<Theme<CheckboxTheme>>,
   descriptionRef: {
     current: string | undefined;
-  }
+  },
 ) {
   if (Separator.isSeparator(item)) {
     return ` ${item.separator}`;
@@ -568,7 +534,7 @@ function renderItem<Value>(
 
   if (item.disabled) {
     const disabledLabel =
-      typeof item.disabled === "string" ? item.disabled : "(disabled)";
+      typeof item.disabled === 'string' ? item.disabled : '(disabled)';
     return theme.style.disabledChoice(`${item.name} ${disabledLabel}`);
   }
 
@@ -578,7 +544,7 @@ function renderItem<Value>(
 
   const checkbox = item.checked ? theme.icon.checked : theme.icon.unchecked;
   const color = isActive ? theme.style.highlight : (x: string) => x;
-  const cursor = isActive ? theme.icon.cursor : " ";
+  const cursor = isActive ? theme.icon.cursor : ' ';
   return color(`${cursor}${checkbox} ${item.name}`);
 }
 
@@ -590,41 +556,38 @@ function getHelpTips<Value>(
   pageSize: number,
   firstRender: {
     current: boolean;
-  }
+  },
 ) {
-  let helpTipTop = "";
-  let helpTipBottom = "";
+  let helpTipTop = '';
+  let helpTipBottom = '';
   if (
-    theme.helpMode === "always" ||
-    (theme.helpMode === "auto" &&
+    theme.helpMode === 'always' ||
+    (theme.helpMode === 'auto' &&
       showHelpTip &&
       (instructions === undefined || instructions))
   ) {
-    if (typeof instructions === "string") {
+    if (typeof instructions === 'string') {
       helpTipTop = instructions;
     } else {
       const keys = [
-        `${theme.style.key("space")} to select`,
-        `${theme.style.key("a")} to toggle all`,
-        `${theme.style.key("i")} to invert selection`,
-        `${theme.style.key("pgup/t or pgdown/b")} to move cursor to top or bottom`,
-        `${theme.style.key("shift + arrow up or down")} to move items`,
-        `${theme.style.key("shift + arrow left or right")} to move single items`,
-        `${theme.style.key("shift + pgup/t or pgdown/b")} to move items to top or bottom`,
-        `${theme.style.key("m")} to move selected items to the cursor position`,
-        `and ${theme.style.key("enter")} to proceed`,
+        `${theme.style.key('space')} to select`,
+        `${theme.style.key('a')} to toggle all`,
+        `${theme.style.key('i')} to invert selection`,
+        `${theme.style.key('pgup/t or pgdown/b')} to move cursor to top or bottom`,
+        `${theme.style.key('shift + arrow up or down')} to move items`,
+        `${theme.style.key('shift + arrow left or right')} to move single items`,
+        `${theme.style.key('shift + pgup/t or pgdown/b')} to move items to top or bottom`,
+        `${theme.style.key('m')} to move selected items to the cursor position`,
+        `and ${theme.style.key('enter')} to proceed`,
       ];
-      helpTipTop = ` (Press ${keys.join(", ")})`;
+      helpTipTop = ` (Press ${keys.join(', ')})`;
     }
 
     if (
       items.length > pageSize &&
-      (theme.helpMode === "always" ||
-        (theme.helpMode === "auto" && firstRender.current))
+      (theme.helpMode === 'always' || (theme.helpMode === 'auto' && firstRender.current))
     ) {
-      helpTipBottom = `\n${theme.style.help(
-        "(Use arrow keys to reveal more choices)"
-      )}`;
+      helpTipBottom = `\n${theme.style.help('(Use arrow keys to reveal more choices)')}`;
       firstRender.current = false;
     }
   }
@@ -635,12 +598,10 @@ function getFinalPrompt<Value>(
   items: readonly Item<Value>[],
   theme: Prettify<Theme<CheckboxTheme>>,
   prefix: string,
-  message: string
+  message: string,
 ) {
   const selection = items.filter(isChecked);
-  const answer = theme.style.answer(
-    theme.style.renderSelectedChoices(selection, items)
-  );
+  const answer = theme.style.answer(theme.style.renderSelectedChoices(selection, items));
 
   return `${prefix} ${message} ${answer}`;
 }
@@ -662,11 +623,11 @@ function getPrompt<Value>(
   config: CheckboxConfig<Value>,
   status: Status,
   page: string,
-  debugMsgRef: { current: string }
+  debugMsgRef: { current: string },
 ) {
   const message = theme.style.message(config.message, status);
 
-  if (status === "done") {
+  if (status === 'done') {
     return getFinalPrompt(items, theme, prefix, message);
   }
 
@@ -676,22 +637,22 @@ function getPrompt<Value>(
     instructions,
     items,
     pageSize,
-    firstRender
+    firstRender,
   );
 
   const choiceDescription = descriptionRef.current
     ? `\n${theme.style.description(descriptionRef.current)}`
     : ``;
 
-  let error = "";
+  let error = '';
   if (errorMsg) {
     error = `\n${theme.style.error(errorMsg)}`;
   }
 
-  let debugOutput = "";
+  let debugOutput = '';
   if (debugMsgRef.current.length > 0) {
     debugOutput = `\n${debugMsgRef.current}`;
-    debugMsgRef.current = "";
+    debugMsgRef.current = '';
   }
 
   return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}${debugOutput}`;
@@ -701,10 +662,7 @@ function getPrompt<Value>(
  * The rendering function wrapped into a createPrompt() function.
  */
 export default createPrompt(
-  <Value>(
-    config: CheckboxConfig<Value>,
-    done: (value: Array<Value>) => void
-  ) => {
+  <Value>(config: CheckboxConfig<Value>, done: (value: Array<Value>) => void) => {
     const {
       instructions,
       pageSize = 7,
@@ -714,10 +672,10 @@ export default createPrompt(
     } = config;
     const theme = makeTheme<CheckboxTheme>(checkboxTheme, config.theme);
     const firstRender = useRef(true);
-    const [status, setStatus] = useState<Status>("idle");
+    const [status, setStatus] = useState<Status>('idle');
     const prefix = usePrefix({ status, theme });
     const [items, setItems] = useState<ReadonlyArray<Item<Value>>>(
-      normalizeChoices(config.choices)
+      normalizeChoices(config.choices),
     );
 
     const bounds = useMemo(() => {
@@ -726,7 +684,7 @@ export default createPrompt(
 
       if (first === -1) {
         throw new ValidationError(
-          "[checkbox prompt] No selectable choices. All choices are disabled."
+          '[checkbox prompt] No selectable choices. All choices are disabled.',
         );
       }
 
@@ -736,7 +694,7 @@ export default createPrompt(
     const [active, setActive] = useState(bounds.first);
     const [showHelpTip, setShowHelpTip] = useState(true);
     const [errorMsg, setError] = useState<string>();
-    const debugMsgRef = useRef<string>("");
+    const debugMsgRef = useRef<string>('');
     /* const addToDebugMsg = createAddToDebugMsg(debugMsgRef); */
 
     useKeypress((key) =>
@@ -753,8 +711,8 @@ export default createPrompt(
         active,
         setActive,
         bounds,
-        setShowHelpTip
-      )
+        setShowHelpTip,
+      ),
     );
 
     const descriptionRef = useRef<string>();
@@ -780,9 +738,9 @@ export default createPrompt(
       config,
       status,
       page,
-      debugMsgRef
+      debugMsgRef,
     );
-  }
+  },
 );
 
-export { Separator } from "@inquirer/core";
+export { Separator } from '@inquirer/core';

@@ -12,9 +12,9 @@ export default tseslint.config(
       '.git',
       'node_modules',
       'coverage',
-      'packages/*/dist/**',
-      'packages/*/node_modules/**',
-      'packages/*/__snapshots__/**',
+      'dist/**',
+      'node_modules/**',
+      '__snapshots__/**',
     ],
   },
   eslint.configs.recommended,
@@ -59,7 +59,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/inquirer/test/**', 'packages/**/*.test.*'],
+    files: ['test/**', '*.test.*'],
     rules: {
       '@typescript-eslint/unbound-method': 'off',
       'n/no-extraneous-import': [
