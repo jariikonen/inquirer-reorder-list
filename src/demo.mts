@@ -1,5 +1,8 @@
 import checkbox, { Separator } from './index.js';
 
+/**
+ * Demonstrates the use of the prompt.
+ */
 async function demo() {
   const answer = await checkbox({
     message: 'You can move items with shift and arrow keys + t (top) and b (bottom)',
