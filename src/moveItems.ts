@@ -4,6 +4,8 @@ import {
   isDownOrRightKey,
   isHorizontalKey,
   isMoveCommandKey,
+  isMoveAboveCommandKey,
+  isMoveBelowCommandKey,
   isTopKey,
   isTopOrBottomKey,
   isUpOrLeftKey,
@@ -184,12 +186,25 @@ export function moveItems<Value>(
     setItems(newItems);
   }
 
-  // place selected items with m key
-  else if (isMoveCommandKey(key)) {
+  // place selected items above active item with m key
+  else if (isMoveAboveCommandKey(key)) {
     const { uncheckedIndices } = getUncheckedItems(items);
     const beforeIndices = new Set(uncheckedIndices.filter((index) => index < active));
     const beforeItems = items.filter((_, i) => beforeIndices.has(i));
     const afterIndices = new Set(uncheckedIndices.filter((index) => index >= active));
+    const afterItems = items.filter((_, i) => afterIndices.has(i));
+    newItems = [...beforeItems, ...checkedItems, ...afterItems];
+    setItems(newItems);
+    const newActive = newItems.indexOf(checkedItems[0]!);
+    setActive(newActive);
+  }
+
+  // place selected items below active item with M key
+  else if (isMoveBelowCommandKey(key)) {
+    const { uncheckedIndices } = getUncheckedItems(items);
+    const beforeIndices = new Set(uncheckedIndices.filter((index) => index <= active));
+    const beforeItems = items.filter((_, i) => beforeIndices.has(i));
+    const afterIndices = new Set(uncheckedIndices.filter((index) => index > active));
     const afterItems = items.filter((_, i) => afterIndices.has(i));
     newItems = [...beforeItems, ...checkedItems, ...afterItems];
     setItems(newItems);

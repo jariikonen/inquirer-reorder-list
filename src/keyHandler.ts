@@ -36,6 +36,12 @@ export const isHorizontalKey = (key: KeyEvent): boolean =>
 
 export const isMoveCommandKey = (key: KeyEvent): boolean => key.name === 'm';
 
+export const isMoveAboveCommandKey = (key: KeyEvent): boolean =>
+  !key.shift && key.name === 'm';
+
+export const isMoveBelowCommandKey = (key: KeyEvent): boolean =>
+  key.shift && key.name === 'm';
+
 export const isTopKey = (key: KeyEvent): boolean =>
   key.name === 'pageup' || key.name === 't';
 
