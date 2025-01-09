@@ -98,7 +98,6 @@ export function getPrompt<Value>(
   config: CheckboxConfig<Value>,
   status: Status,
   page: string,
-  debugMsg: string | undefined,
 ) {
   const message = theme.style.message(config.message, status);
 
@@ -124,11 +123,11 @@ export function getPrompt<Value>(
     error = `\n${theme.style.error(errorMsg)}`;
   }
 
-  const debugOutput = `\n${debugMsg}`;
+  // const debugOutput = `\n${debugMsg}`;
   /*if (debugMsgRef.current.length > 0) {
     debugOutput = `\n${debugMsgRef.current}`;
     debugMsgRef.current = '';
   }*/
 
-  return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${debugOutput}${ansiEscapes.cursorHide}`;
+  return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}`;
 }

@@ -8,7 +8,6 @@ import {
   useMemo,
   makeTheme,
   ValidationError,
-  Separator,
   type Status,
 } from '@inquirer/core';
 import colors from 'yoctocolors-cjs';
@@ -26,7 +25,7 @@ const checkboxTheme: CheckboxTheme = {
     cursor: figures.pointer,
   },
   style: {
-    disabledChoice: (text: string) => colors.dim(`- ${text}`),
+    disabledChoice: (text: string) => colors.dim(`${text}`),
     renderSelectedChoices: (selectedChoices) =>
       selectedChoices.map((choice) => choice.short).join(', '),
     description: (text: string) => colors.cyan(text),
@@ -35,11 +34,9 @@ const checkboxTheme: CheckboxTheme = {
 };
 
 function normalizeChoices<Value>(
-  choices: ReadonlyArray<string | Separator> | ReadonlyArray<Choice<Value> | Separator>,
+  choices: ReadonlyArray<string> | ReadonlyArray<Choice<Value>>,
 ): Item<Value>[] {
   return choices.map((choice) => {
-    if (Separator.isSeparator(choice)) return choice;
-
     if (typeof choice === 'string') {
       return {
         value: choice as Value,
@@ -76,13 +73,7 @@ function normalizeChoices<Value>(
  */
 export default createPrompt(
   <Value>(config: CheckboxConfig<Value>, done: (value: Array<Value>) => void) => {
-    const {
-      instructions,
-      pageSize = 7,
-      loop = true,
-      required,
-      validate = () => true,
-    } = config;
+    const { instructions, pageSize = 7, loop = true } = config;
     const theme = makeTheme<CheckboxTheme>(checkboxTheme, config.theme);
     const firstRender = useRef(true);
     const [status, setStatus] = useState<Status>('idle');
@@ -107,7 +98,7 @@ export default createPrompt(
     const [active, setActive] = useState(bounds.first);
     const [showHelpTip, setShowHelpTip] = useState(true);
     const [errorMsg, setError] = useState<string>();
-    const [debugMsg, setDebug] = useState<string>();
+    // const [debugMsg, setDebug] = useState<string>();
     // const addToDebugMsg = createAddToDebugMsg(debugMsgRef);
 
     useKeypress((key) =>
@@ -115,8 +106,6 @@ export default createPrompt(
         key,
         items,
         setItems,
-        validate,
-        required,
         setError,
         setStatus,
         done,
@@ -125,7 +114,6 @@ export default createPrompt(
         setActive,
         bounds,
         setShowHelpTip,
-        setDebug,
       ),
     );
 
@@ -152,9 +140,8 @@ export default createPrompt(
       config,
       status,
       page,
-      debugMsg,
     );
   },
 );
 
-export { Separator } from '@inquirer/core';
+export { Separator } from './Separator.js';

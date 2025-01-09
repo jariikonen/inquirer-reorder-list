@@ -1,8 +1,7 @@
-import { Separator } from '@inquirer/core';
 import { Item, NormalizedChoice } from './types.js';
 
 export function isSelectable<Value>(item: Item<Value>): item is NormalizedChoice<Value> {
-  return !Separator.isSeparator(item) && !item.disabled;
+  return item ? true : false;
 }
 
 export function isChecked<Value>(item: Item<Value>): item is NormalizedChoice<Value> {
@@ -10,7 +9,7 @@ export function isChecked<Value>(item: Item<Value>): item is NormalizedChoice<Va
 }
 
 export function toggle<Value>(item: Item<Value>): Item<Value> {
-  return isSelectable(item) ? { ...item, checked: !item.checked } : item;
+  return { ...item, checked: !item.checked };
 }
 
 export function check(checked: boolean) {

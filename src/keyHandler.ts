@@ -7,8 +7,8 @@ import {
   KeypressEvent,
   Status,
 } from '@inquirer/core';
-import { CheckboxConfig, Choice, Item, KeyEvent } from './types.js';
-import { check, isChecked, isSelectable, toggle } from './common.js';
+import { CheckboxConfig, Item, KeyEvent } from './types.js';
+import { check, isSelectable, toggle } from './common.js';
 import { moveItems } from './moveItems.js';
 import { getNext } from './getNext.js';
 
@@ -62,14 +62,10 @@ export const isTopOrBottomKey = (key: KeyEvent): boolean =>
  * @param bounds First and last selectable index on the choices list.
  * @param setShowHelpTip Function for setting the showHelpTip boolean.
  */
-export async function keyHandler<Value>(
+export function keyHandler<Value>(
   keypressEvent: KeypressEvent,
   items: readonly Item<Value>[],
   setItems: (newValue: readonly Item<Value>[]) => void,
-  validate: (
-    choices: readonly Choice<Value>[],
-  ) => boolean | string | Promise<string | boolean>,
-  required: CheckboxConfig<Value>['required'],
   setError: (newValue?: string) => void,
   setStatus: (newValue: Status) => void,
   done: (value: Array<Value>) => void,
@@ -81,24 +77,15 @@ export async function keyHandler<Value>(
     last: number;
   },
   setShowHelpTip: (newValue: boolean) => void,
-  setDebug: (newValue?: string) => void,
 ) {
   // cast to KeyEvent to get access to all the keys of the event
   const key = keypressEvent as KeyEvent;
-  setDebug(
+  /*setDebug(
     `name: ${key.name}, code: ${key.code}, sequence: ${key.sequence}, ctrl: ${key.ctrl}, meta: ${key.meta}, shift: ${key.shift}`,
-  );
+  );*/
   if (isEnterKey(key)) {
-    const selection = items.filter(isChecked);
-    const isValid = await validate([...selection]);
-    if (required && !items.some(isChecked)) {
-      setError('At least one choice must be selected');
-    } else if (isValid === true) {
-      setStatus('done');
-      done(selection.map((choice) => choice.value));
-    } else {
-      setError(isValid || 'You must select a valid value');
-    }
+    setStatus('done');
+    done(items.map((choice) => choice.value));
   } else if (
     isUpKey(key) ||
     isDownKey(key) ||

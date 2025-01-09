@@ -39,26 +39,20 @@ export type NormalizedChoice<Value> = {
 
 export type CheckboxConfig<
   Value,
-  ChoicesObject =
-    | ReadonlyArray<string | Separator>
-    | ReadonlyArray<Choice<Value> | Separator>,
+  ChoicesObject = ReadonlyArray<string> | ReadonlyArray<Choice<Value>>,
 > = {
   message: string;
   prefix?: string;
   pageSize?: number;
   instructions?: string | boolean;
-  choices: ChoicesObject extends ReadonlyArray<string | Separator>
+  choices: ChoicesObject extends ReadonlyArray<string>
     ? ChoicesObject
-    : ReadonlyArray<Choice<Value> | Separator>;
+    : ReadonlyArray<Choice<Value>>;
   loop?: boolean;
-  required?: boolean;
-  validate?: (
-    choices: ReadonlyArray<Choice<Value>>,
-  ) => boolean | string | Promise<string | boolean>;
   theme?: PartialDeep<Theme<CheckboxTheme>>;
 };
 
-export type Item<Value> = NormalizedChoice<Value> | Separator;
+export type Item<Value> = NormalizedChoice<Value>;
 
 export interface KeyEvent {
   sequence: string;

@@ -1,4 +1,4 @@
-import { Separator, Theme } from '@inquirer/core';
+import { Theme } from '@inquirer/core';
 import { Prettify } from '@inquirer/type';
 import { CheckboxTheme, Item } from './types.js';
 
@@ -24,16 +24,6 @@ export function renderItem<Value>(
     current: string | undefined;
   },
 ) {
-  if (Separator.isSeparator(item)) {
-    return ` ${item.separator}`;
-  }
-
-  if (item.disabled) {
-    const disabledLabel =
-      typeof item.disabled === 'string' ? item.disabled : '(disabled)';
-    return theme.style.disabledChoice(`${item.name} ${disabledLabel}`);
-  }
-
   if (isActive) {
     descriptionRef.current = item.description;
   }
@@ -41,5 +31,14 @@ export function renderItem<Value>(
   const checkbox = item.checked ? theme.icon.checked : theme.icon.unchecked;
   const color = isActive ? theme.style.highlight : (x: string) => x;
   const cursor = isActive ? theme.icon.cursor : ' ';
+
+  if (item.disabled) {
+    const disabledLabel =
+      typeof item.disabled === 'string' ? item.disabled : '(disabled)';
+    return color(
+      `${cursor}${checkbox}` +
+        theme.style.disabledChoice(` ${item.name} ${disabledLabel}`),
+    );
+  }
   return color(`${cursor}${checkbox} ${item.name}`);
 }
