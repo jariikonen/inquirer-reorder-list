@@ -12,6 +12,9 @@ import { check, isSelectable, toggle } from './common.js';
 import { moveItems } from './moveItems.js';
 import { getNext } from './getNext.js';
 
+export const isHelpKey = (key: KeyEvent): boolean =>
+  key.sequence === '?' || key.sequence === 'H';
+
 export const isLeftKey = (key: KeyEvent): boolean =>
   // The left arrow
   key.name === 'left' ||
@@ -89,7 +92,10 @@ export function keyHandler<Value>(
   /*setDebug(
     `name: ${key.name}, code: ${key.code}, sequence: ${key.sequence}, ctrl: ${key.ctrl}, meta: ${key.meta}, shift: ${key.shift}`,
   );*/
-  if (isEnterKey(key)) {
+  setShowHelpTip(false);
+  if (isHelpKey(key)) {
+    setShowHelpTip(true);
+  } else if (isEnterKey(key)) {
     setStatus('done');
     done(items.map((choice) => choice.value));
   } else if (
@@ -114,7 +120,6 @@ export function keyHandler<Value>(
     }
   } else if (isSpaceKey(key)) {
     setError(undefined);
-    setShowHelpTip(false);
     setItems(items.map((choice, i) => (i === active ? toggle(choice) : choice)));
   } else if (key.name === 'a') {
     const selectAll = items.some((choice) => isSelectable(choice) && !choice.checked);

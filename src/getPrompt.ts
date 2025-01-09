@@ -26,17 +26,16 @@ function getHelpTips<Value>(
       helpTipTop = instructions;
     } else {
       const keys = [
-        `${theme.style.key('space')} to select`,
-        `${theme.style.key('a')} to toggle all`,
-        `${theme.style.key('i')} to invert selection`,
-        `${theme.style.key('pgup/t or pgdown/b')} to move cursor to top or bottom`,
-        `${theme.style.key('shift + arrow up or down')} to move items`,
-        `${theme.style.key('shift + arrow left or right')} to move single items`,
-        `${theme.style.key('shift + pgup/t or pgdown/b')} to move items to top or bottom`,
-        `${theme.style.key('m')} to move selected items to the cursor position`,
-        `and ${theme.style.key('enter')} to proceed`,
+        `${theme.style.key('H or ?')} help`,
+        `${theme.style.key('space')} select`,
+        `${theme.style.key('a')} toggle all`,
+        `${theme.style.key('i')} invert selection`,
+        `${theme.style.key('ctrl/shift/meta + up/j, down/k, pgup/t or pgdown/b')} move selected items`,
+        `${theme.style.key('ctrl/shift/meta + left/h or right/l')} move single items`,
+        `${theme.style.key('m or M')} move selected above or below cursor`,
+        `${theme.style.key('enter')} proceed`,
       ];
-      helpTipTop = ` (Press ${keys.join(', ')})`;
+      helpTipTop = ` (${keys.join(', ')})`;
     }
 
     if (

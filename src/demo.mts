@@ -20,7 +20,7 @@ async function demo() {
       { name: '7', value: '7' },
     ],
   });
-  console.log(`Answer ${answer.join(', ')}`);
+  console.log(`Answer: ${answer.join(', ')}`);
 }
 
 await demo();
