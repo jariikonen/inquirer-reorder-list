@@ -1,17 +1,19 @@
 import { isDownKey, isUpKey } from '@inquirer/core';
-import { isChecked } from './common.js';
 import {
+  isChecked,
   isDownOrRightKey,
   isHorizontalKey,
   isMoveCommandKey,
   isMoveAboveCommandKey,
-  isMoveBelowCommandKey,
   isTopKey,
   isTopOrBottomKey,
   isUpOrLeftKey,
   isVerticalKey,
-} from './keyHandler.js';
-import { Item, KeyEvent } from './types.js';
+  doNotMove,
+  isVerticalOrHorizontalKey,
+  isMoving,
+} from './common.js';
+import { KeyEvent, NormalizedChoice } from './types.js';
 import { getNext } from './getNext.js';
 
 function areConsecutive(indices: number[]) {
@@ -20,23 +22,23 @@ function areConsecutive(indices: number[]) {
   });
 }
 
-function getCheckedItems<Value>(items: readonly Item<Value>[]) {
-  const indices: number[] = [];
+function getCheckedItems<Value>(items: readonly NormalizedChoice<Value>[]) {
+  const checkedIndices: number[] = [];
   const checkedItems = items.filter((item, i) => {
     const checked = isChecked(item);
     if (checked) {
-      indices.push(i);
+      checkedIndices.push(i);
     }
     return checked;
   });
   return {
     checkedItems,
-    indices,
-    consecutive: areConsecutive(indices),
+    checkedIndices,
+    consecutive: areConsecutive(checkedIndices),
   };
 }
 
-function getUncheckedItems<Value>(items: readonly Item<Value>[]) {
+function getUncheckedItems<Value>(items: readonly NormalizedChoice<Value>[]) {
   const uncheckedIndices: number[] = [];
   const uncheckedItems = items.filter((item, i) => {
     const unchecked = !isChecked(item);
@@ -48,17 +50,18 @@ function getUncheckedItems<Value>(items: readonly Item<Value>[]) {
   return { uncheckedItems, uncheckedIndices };
 }
 
+// activeOffset is the active item offset from the first or last selected/checked
+// item depending on the direction of movement
 function getActiveOffset<Value>(
   key: KeyEvent,
-  items: readonly Item<Value>[],
-  activeItem: Item<Value>,
+  checkedItems: readonly NormalizedChoice<Value>[],
+  activeItem: NormalizedChoice<Value>,
 ) {
-  let index: number | null = items.indexOf(activeItem);
-  index = index >= 0 ? index : null;
+  const index: number = checkedItems.indexOf(activeItem);
   if (isUpOrLeftKey(key)) {
     return index;
   }
-  return index === null ? index : index - items.length + 1;
+  return index === null ? index : index - checkedItems.length + 1;
 }
 
 // active offset is relative to the direction where item is being moved
@@ -71,9 +74,9 @@ function invertActiveOffset(offset: number | null, numberOfItems: number, up: bo
 }
 
 function moveUpFromUpperBound<Value>(
-  items: readonly Item<Value>[],
+  items: readonly NormalizedChoice<Value>[],
   numberOfMovingItems: number,
-  movingItems: readonly Item<Value>[],
+  movingItems: readonly NormalizedChoice<Value>[],
   activeOffset: number | null,
 ) {
   const newItems = [...items.slice(numberOfMovingItems), ...movingItems];
@@ -82,9 +85,9 @@ function moveUpFromUpperBound<Value>(
 }
 
 function moveDownFromLowerBound<Value>(
-  items: readonly Item<Value>[],
+  items: readonly NormalizedChoice<Value>[],
   numberOfMovingItems: number,
-  movingItems: readonly Item<Value>[],
+  movingItems: readonly NormalizedChoice<Value>[],
   activeOffset: number | null,
 ) {
   const newItems = [
@@ -98,8 +101,8 @@ function moveDownFromLowerBound<Value>(
 function moveInTheMiddle<Value>(
   key: KeyEvent,
   next: number,
-  items: readonly Item<Value>[],
-  movingItems: readonly Item<Value>[],
+  items: readonly NormalizedChoice<Value>[],
+  movingItems: readonly NormalizedChoice<Value>[],
 ) {
   const before = isUpOrLeftKey(key)
     ? items.slice(0, next)
@@ -114,39 +117,71 @@ function moveInTheMiddle<Value>(
 }
 
 /**
- * Calculates new positions for the items on the choices list and the index of
- * the active item, and finally sets these values.
+ * Calculates and sets new positions for the items and the active item.
  * @param key KeyEvent to be handled.
  * @param active Current active item index.
  * @param setActive Function for setting the active item.
  * @param items Choices list items.
  * @param setItems Function for setting the items array.
+ * @param loop Boolean indicating whether the list is looped or not.
+ * @param bounds List index boundaries.
  */
 export function moveItems<Value>(
   key: KeyEvent,
   active: number,
   setActive: (newValue: number) => void,
-  items: readonly Item<Value>[],
-  setItems: (newValue: readonly Item<Value>[]) => void,
+  items: readonly NormalizedChoice<Value>[],
+  setItems: (newValue: readonly NormalizedChoice<Value>[]) => void,
+  loop: boolean | undefined,
+  bounds: { first: number; last: number },
 ) {
   const currentActive = active;
   const activeItem = items[currentActive]!;
 
-  const { checkedItems, indices, consecutive } = getCheckedItems(items);
+  // not looping and moving up from top or down from bottom (active item is not
+  // checked)
+  if (!isChecked(activeItem) && doNotMove(key, active, bounds, loop)) {
+    return;
+  }
+
+  const { checkedItems, checkedIndices, consecutive } = getCheckedItems(items);
   let numberOfMovingItems = 1;
+  const topmostChecked = checkedIndices[0]!;
+  const bottommostChecked = checkedIndices.at(-1)!;
   let activeOffset: number | null = null;
+
+  // moving consecutive checked items
   if (
+    isMoving(key) &&
     (isUpKey(key) || isDownKey(key)) &&
     isChecked(activeItem) &&
-    checkedItems.length > 1
+    checkedItems.length > 1 &&
+    consecutive
   ) {
     numberOfMovingItems = checkedItems.length;
     activeOffset = getActiveOffset(key, checkedItems, activeItem);
+
+    // not looping and moving up from top or down from bottom (active item is
+    // checked)
+    const boundary = isUpKey(key) ? topmostChecked : bottommostChecked;
+    if (doNotMove(key, boundary, bounds, loop)) {
+      return;
+    }
   }
-  const topmostChecked = indices[0]!;
-  const bottommostChecked = indices.at(-1)!;
+
+  // not looping and single checked item is moving up from top or down from
+  // bottom
+  if (
+    isChecked(activeItem) &&
+    checkedItems.length === 1 &&
+    isVerticalOrHorizontalKey(key) &&
+    doNotMove(key, active, bounds, loop)
+  ) {
+    return;
+  }
+
   let next = getNext(key, active, items, true);
-  let newItems: Item<Value>[] = [];
+  let newItems: NormalizedChoice<Value>[] = [];
 
   // move consecutive selected items, single selected item or active unselected item
   if (
@@ -186,29 +221,20 @@ export function moveItems<Value>(
     setItems(newItems);
   }
 
-  // place selected items above active item with m key
-  else if (isMoveAboveCommandKey(key)) {
+  // place selected items above active item with m key or below active item
+  // with M key
+  else if (isMoveCommandKey(key)) {
     const { uncheckedIndices } = getUncheckedItems(items);
     const beforeIndices = new Set(uncheckedIndices.filter((index) => index < active));
     const beforeItems = items.filter((_, i) => beforeIndices.has(i));
-    const afterIndices = new Set(uncheckedIndices.filter((index) => index >= active));
-    const afterItems = items.filter((_, i) => afterIndices.has(i));
-    newItems = [...beforeItems, ...checkedItems, ...afterItems];
-    setItems(newItems);
-    const newActive = newItems.indexOf(checkedItems[0]!);
-    setActive(newActive);
-  }
-
-  // place selected items below active item with M key
-  else if (isMoveBelowCommandKey(key)) {
-    const { uncheckedIndices } = getUncheckedItems(items);
-    const beforeIndices = new Set(uncheckedIndices.filter((index) => index <= active));
-    const beforeItems = items.filter((_, i) => beforeIndices.has(i));
     const afterIndices = new Set(uncheckedIndices.filter((index) => index > active));
     const afterItems = items.filter((_, i) => afterIndices.has(i));
-    newItems = [...beforeItems, ...checkedItems, ...afterItems];
+    const checkedItemsWithoutActive = checkedItems.filter((item) => item !== activeItem);
+    newItems = isMoveAboveCommandKey(key)
+      ? [...beforeItems, ...checkedItemsWithoutActive, activeItem, ...afterItems]
+      : [...beforeItems, activeItem, ...checkedItemsWithoutActive, ...afterItems];
     setItems(newItems);
-    const newActive = newItems.indexOf(checkedItems[0]!);
+    const newActive = newItems.indexOf(activeItem);
     setActive(newActive);
   }
 

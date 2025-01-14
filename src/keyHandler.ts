@@ -1,58 +1,26 @@
 import {
-  isDownKey,
   isEnterKey,
   isNumberKey,
   isSpaceKey,
-  isUpKey,
   KeypressEvent,
   Status,
 } from '@inquirer/core';
-import { CheckboxConfig, Item, KeyEvent } from './types.js';
-import { check, isSelectable, toggle } from './common.js';
+import { CheckboxConfig, KeyEvent, NormalizedChoice } from './types.js';
+import {
+  check,
+  doNotMove,
+  isBottomKey,
+  isDownOrRightKey,
+  isHelpKey,
+  isLoopAndVerticalOrHorizontalKey,
+  isMoveCommandKey,
+  isTopKey,
+  isVerticalOrHorizontalKey,
+  isUpOrLeftKey,
+  toggle,
+} from './common.js';
 import { moveItems } from './moveItems.js';
 import { getNext } from './getNext.js';
-
-export const isHelpKey = (key: KeyEvent): boolean =>
-  key.sequence === '?' || key.sequence === 'H';
-
-export const isLeftKey = (key: KeyEvent): boolean =>
-  // The left arrow
-  key.name === 'left' ||
-  // Vim keybinding
-  key.name === 'h';
-
-export const isRightKey = (key: KeyEvent): boolean =>
-  // The right arrow
-  key.name === 'right' ||
-  // Vim keybinding
-  key.name === 'l';
-
-export const isUpOrLeftKey = (key: KeyEvent): boolean => isUpKey(key) || isLeftKey(key);
-
-export const isDownOrRightKey = (key: KeyEvent): boolean =>
-  isDownKey(key) || isRightKey(key);
-
-export const isVerticalKey = (key: KeyEvent): boolean => isUpKey(key) || isDownKey(key);
-
-export const isHorizontalKey = (key: KeyEvent): boolean =>
-  isLeftKey(key) || isRightKey(key);
-
-export const isMoveCommandKey = (key: KeyEvent): boolean => key.name === 'm';
-
-export const isMoveAboveCommandKey = (key: KeyEvent): boolean =>
-  !key.shift && key.name === 'm';
-
-export const isMoveBelowCommandKey = (key: KeyEvent): boolean =>
-  key.shift && key.name === 'm';
-
-export const isTopKey = (key: KeyEvent): boolean =>
-  key.name === 'pageup' || key.name === 't';
-
-export const isBottomKey = (key: KeyEvent): boolean =>
-  key.name === 'pagedown' || key.name === 'b';
-
-export const isTopOrBottomKey = (key: KeyEvent): boolean =>
-  isTopKey(key) || isBottomKey(key);
 
 /**
  * Handles key press events.
@@ -73,8 +41,8 @@ export const isTopOrBottomKey = (key: KeyEvent): boolean =>
  */
 export function keyHandler<Value>(
   keypressEvent: KeypressEvent,
-  items: readonly Item<Value>[],
-  setItems: (newValue: readonly Item<Value>[]) => void,
+  items: readonly NormalizedChoice<Value>[],
+  setItems: (newValue: readonly NormalizedChoice<Value>[]) => void,
   setError: (newValue?: string) => void,
   setStatus: (newValue: Status) => void,
   done: (value: Array<Value>) => void,
@@ -86,11 +54,15 @@ export function keyHandler<Value>(
     last: number;
   },
   setShowHelpTip: (newValue: boolean) => void,
+  //setDebug: (newValue: string) => void,
 ) {
   // cast to KeyEvent to get access to all the keys of the event
   const key = keypressEvent as KeyEvent;
   /*setDebug(
     `name: ${key.name}, code: ${key.code}, sequence: ${key.sequence}, ctrl: ${key.ctrl}, meta: ${key.meta}, shift: ${key.shift}`,
+  );*/
+  /*setDebug(
+    `loop: ${loop}, isUpOrLeftKey: ${isUpOrLeftKey(key)}, isDownOrRightKey: ${isDownOrRightKey(key)}, isTopKey: ${isTopKey(key)}, isBottomKey: ${isBottomKey(key)}, doNotMove: ${doNotMove(key, active, bounds, loop)}, active: ${active}, bounds.first: ${bounds.first}, bounds.last: ${bounds.last}`,
   );*/
   setShowHelpTip(false);
   if (isHelpKey(key)) {
@@ -99,30 +71,29 @@ export function keyHandler<Value>(
     setStatus('done');
     done(items.map((choice) => choice.value));
   } else if (
-    isUpKey(key) ||
-    isDownKey(key) ||
-    isLeftKey(key) ||
-    isRightKey(key) ||
+    isUpOrLeftKey(key) ||
+    isDownOrRightKey(key) ||
     isTopKey(key) ||
     isBottomKey(key) ||
     isMoveCommandKey(key)
   ) {
-    if (
-      loop ||
-      (isUpOrLeftKey(key) && active !== bounds.first) ||
-      (isDownOrRightKey(key) && active !== bounds.last)
+    if (key.ctrl || key.meta || key.shift || isMoveCommandKey(key)) {
+      moveItems(key, active, setActive, items, setItems, loop, bounds);
+    } else if (
+      isLoopAndVerticalOrHorizontalKey(key, loop) ||
+      (isVerticalOrHorizontalKey(key) && !doNotMove(key, active, bounds, loop))
     ) {
-      if (key.ctrl || key.meta || key.shift || isMoveCommandKey(key)) {
-        moveItems(key, active, setActive, items, setItems);
-      } else {
-        setActive(getNext(key, active, items));
-      }
+      setActive(getNext(key, active, items));
+    } else if (isTopKey(key)) {
+      setActive(bounds.first);
+    } else if (isBottomKey(key)) {
+      setActive(bounds.last);
     }
   } else if (isSpaceKey(key)) {
     setError(undefined);
     setItems(items.map((choice, i) => (i === active ? toggle(choice) : choice)));
   } else if (key.name === 'a') {
-    const selectAll = items.some((choice) => isSelectable(choice) && !choice.checked);
+    const selectAll = items.some((choice) => !choice.checked);
     setItems(items.map(check(selectAll)));
   } else if (key.name === 'i') {
     setItems(items.map(toggle));
@@ -130,7 +101,7 @@ export function keyHandler<Value>(
     // Adjust index to start at 1
     const position = Number(key.name) - 1;
     const item = items[position];
-    if (item != null && isSelectable(item)) {
+    if (item != null) {
       setActive(position);
       setItems(items.map((choice, i) => (i === position ? toggle(choice) : choice)));
     }

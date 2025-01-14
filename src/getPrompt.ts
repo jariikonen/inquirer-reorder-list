@@ -1,14 +1,13 @@
 import type { Prettify } from '@inquirer/type';
 import { type Theme, type Status } from '@inquirer/core';
 import ansiEscapes from 'ansi-escapes';
-import { CheckboxConfig, CheckboxTheme, Item } from './types.js';
-import { isChecked } from './common.js';
+import { CheckboxConfig, CheckboxTheme, NormalizedChoice } from './types.js';
 
 function getHelpTips<Value>(
   theme: Prettify<Theme<CheckboxTheme>>,
   showHelpTip: boolean,
   instructions: string | boolean | undefined,
-  items: readonly Item<Value>[],
+  items: readonly NormalizedChoice<Value>[],
   pageSize: number,
   firstRender: {
     current: boolean;
@@ -26,7 +25,7 @@ function getHelpTips<Value>(
       helpTipTop = instructions;
     } else {
       const keys = [
-        `${theme.style.key('H or ?')} help`,
+        `${theme.style.key('?')} help`,
         `${theme.style.key('space')} select`,
         `${theme.style.key('a')} toggle all`,
         `${theme.style.key('i')} invert selection`,
@@ -47,18 +46,6 @@ function getHelpTips<Value>(
     }
   }
   return [helpTipTop, helpTipBottom];
-}
-
-function getFinalPrompt<Value>(
-  items: readonly Item<Value>[],
-  theme: Prettify<Theme<CheckboxTheme>>,
-  prefix: string,
-  message: string,
-) {
-  const selection = items.filter(isChecked);
-  const answer = theme.style.answer(theme.style.renderSelectedChoices(selection, items));
-
-  return `${prefix} ${message} ${answer}`;
 }
 
 /**
@@ -84,7 +71,7 @@ export function getPrompt<Value>(
   theme: Prettify<Theme<CheckboxTheme>>,
   showHelpTip: boolean,
   instructions: string | boolean | undefined,
-  items: readonly Item<Value>[],
+  items: readonly NormalizedChoice<Value>[],
   pageSize: number,
   firstRender: {
     current: boolean;
@@ -97,11 +84,12 @@ export function getPrompt<Value>(
   config: CheckboxConfig<Value>,
   status: Status,
   page: string,
+  //debugMsg: string,
 ) {
   const message = theme.style.message(config.message, status);
 
   if (status === 'done') {
-    return getFinalPrompt(items, theme, prefix, message);
+    return `${prefix} ${message}`;
   }
 
   const [helpTipTop, helpTipBottom] = getHelpTips(
@@ -122,11 +110,7 @@ export function getPrompt<Value>(
     error = `\n${theme.style.error(errorMsg)}`;
   }
 
-  // const debugOutput = `\n${debugMsg}`;
-  /*if (debugMsgRef.current.length > 0) {
-    debugOutput = `\n${debugMsgRef.current}`;
-    debugMsgRef.current = '';
-  }*/
+  //const debugOutput = `\n${debugMsg}`;
 
   return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}`;
 }

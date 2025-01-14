@@ -9,10 +9,7 @@ export type CheckboxTheme = {
   };
   style: {
     disabledChoice: (text: string) => string;
-    renderSelectedChoices: <T>(
-      selectedChoices: ReadonlyArray<NormalizedChoice<T>>,
-      allChoices: ReadonlyArray<NormalizedChoice<T> | Separator>,
-    ) => string;
+    renderNewOrder: <T>(choices: ReadonlyArray<NormalizedChoice<T>>) => string;
     description: (text: string) => string;
   };
   helpMode: 'always' | 'never' | 'auto';
@@ -39,20 +36,20 @@ export type NormalizedChoice<Value> = {
 
 export type CheckboxConfig<
   Value,
-  ChoicesObject = ReadonlyArray<string> | ReadonlyArray<Choice<Value>>,
+  ChoicesObject =
+    | ReadonlyArray<string | Separator>
+    | ReadonlyArray<Choice<Value> | Separator>,
 > = {
   message: string;
   prefix?: string;
   pageSize?: number;
   instructions?: string | boolean;
-  choices: ChoicesObject extends ReadonlyArray<string>
+  choices: ChoicesObject extends ReadonlyArray<string | Separator>
     ? ChoicesObject
-    : ReadonlyArray<Choice<Value>>;
+    : ReadonlyArray<Choice<Value> | Separator>;
   loop?: boolean;
   theme?: PartialDeep<Theme<CheckboxTheme>>;
 };
-
-export type Item<Value> = NormalizedChoice<Value>;
 
 export interface KeyEvent {
   sequence: string;

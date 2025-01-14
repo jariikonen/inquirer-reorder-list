@@ -9,12 +9,12 @@ import {
   makeTheme,
   ValidationError,
   type Status,
+  Separator,
 } from '@inquirer/core';
 import colors from 'yoctocolors-cjs';
 import figures from '@inquirer/figures';
 import { getPrompt } from './getPrompt.js';
-import { CheckboxTheme, Choice, CheckboxConfig, Item } from './types.js';
-import { isSelectable } from './common.js';
+import { CheckboxTheme, Choice, CheckboxConfig, NormalizedChoice } from './types.js';
 import { renderItem } from './renderItem.js';
 import { keyHandler } from './keyHandler.js';
 
@@ -26,17 +26,25 @@ const checkboxTheme: CheckboxTheme = {
   },
   style: {
     disabledChoice: (text: string) => colors.dim(`${text}`),
-    renderSelectedChoices: (selectedChoices) =>
-      selectedChoices.map((choice) => choice.short).join(', '),
+    renderNewOrder: (choices) => choices.map((choice) => choice.short).join(', '),
     description: (text: string) => colors.cyan(text),
   },
   helpMode: 'auto',
 };
 
 function normalizeChoices<Value>(
-  choices: ReadonlyArray<string> | ReadonlyArray<Choice<Value>>,
-): Item<Value>[] {
+  choices: ReadonlyArray<string | Separator> | ReadonlyArray<Choice<Value> | Separator>,
+): NormalizedChoice<Value>[] {
   return choices.map((choice) => {
+    if (Separator.isSeparator(choice))
+      return {
+        value: 'separator' as Value,
+        name: choice.separator,
+        short: 'separator',
+        disabled: false,
+        checked: false,
+      };
+
     if (typeof choice === 'string') {
       return {
         value: choice as Value,
@@ -59,12 +67,14 @@ function normalizeChoices<Value>(
   });
 }
 
-/*function createAddToDebugMsg(debugMsgRef: { current: string }) {
+/*function createAddToDebugMsg(debugMsg: string, setDebug: (newValue: string) => void) {
   return (newMsg: string, newLine = false) => {
     const separator = newLine ? '\n' : ', ';
-    debugMsgRef.current = debugMsgRef.current
-      ? `${debugMsgRef.current}${separator}<${newMsg}>`
-      : `<${newMsg}>`;
+    if (debugMsg) {
+      setDebug(`${debugMsg}${separator}<${newMsg}>`);
+    } else {
+      setDebug(`<${newMsg}>`);
+    }
   };
 }*/
 
@@ -78,19 +88,19 @@ export default createPrompt(
     const firstRender = useRef(true);
     const [status, setStatus] = useState<Status>('idle');
     const prefix = usePrefix({ status, theme });
-    const [items, setItems] = useState<ReadonlyArray<Item<Value>>>(
+    const [items, setItems] = useState<ReadonlyArray<NormalizedChoice<Value>>>(
       normalizeChoices(config.choices),
     );
 
     const bounds = useMemo(() => {
-      const first = items.findIndex(isSelectable);
-      const last = items.findLastIndex(isSelectable);
-
-      if (first === -1) {
+      if (items.length === 0) {
         throw new ValidationError(
-          '[checkbox prompt] No selectable choices. All choices are disabled.',
+          '[reorder list prompt] No choices. Choises array is empty.',
         );
       }
+
+      const first = 0;
+      const last = items.length - 1;
 
       return { first, last };
     }, [items]);
@@ -98,8 +108,8 @@ export default createPrompt(
     const [active, setActive] = useState(bounds.first);
     const [showHelpTip, setShowHelpTip] = useState(true);
     const [errorMsg, setError] = useState<string>();
-    // const [debugMsg, setDebug] = useState<string>();
-    // const addToDebugMsg = createAddToDebugMsg(debugMsgRef);
+    //const [debugMsg, setDebug] = useState<string>('');
+    // const addToDebug = createAddToDebugMsg(debugMsg, setDebug);
 
     useKeypress((key) =>
       keyHandler(
@@ -114,6 +124,7 @@ export default createPrompt(
         setActive,
         bounds,
         setShowHelpTip,
+        //setDebug,
       ),
     );
 
@@ -140,8 +151,9 @@ export default createPrompt(
       config,
       status,
       page,
+      //ebugMsg,
     );
   },
 );
 
-export { Separator } from './Separator.js';
+export { Separator } from '@inquirer/core';

@@ -9,8 +9,8 @@ const Separator = require('./index.js').Separator;
 async function demo() {
   try {
     const answer = await checkbox({
-      message: 'Arrange list items:',
-      pageSize: 9,
+      message: 'Arrange list items',
+      pageSize: 7,
       loop: true,
       choices: [
         { name: '1', value: '1' },
