@@ -61,9 +61,6 @@ export function keyHandler<Value>(
   /*setDebug(
     `name: ${key.name}, code: ${key.code}, sequence: ${key.sequence}, ctrl: ${key.ctrl}, meta: ${key.meta}, shift: ${key.shift}`,
   );*/
-  /*setDebug(
-    `loop: ${loop}, isUpOrLeftKey: ${isUpOrLeftKey(key)}, isDownOrRightKey: ${isDownOrRightKey(key)}, isTopKey: ${isTopKey(key)}, isBottomKey: ${isBottomKey(key)}, doNotMove: ${doNotMove(key, active, bounds, loop)}, active: ${active}, bounds.first: ${bounds.first}, bounds.last: ${bounds.last}`,
-  );*/
   setShowHelpTip(false);
   if (isHelpKey(key)) {
     setShowHelpTip(true);

@@ -151,7 +151,7 @@ export default createPrompt(
       config,
       status,
       page,
-      //ebugMsg,
+      //debugMsg,
     );
   },
 );

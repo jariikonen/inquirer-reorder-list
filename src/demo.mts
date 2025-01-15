@@ -22,6 +22,7 @@ async function demo() {
         { value: 11 },
         { value: 12 },
       ],
+      theme: { helpMode: 'always' },
     });
     console.log(`Answer: ${answer.join(', ')}`);
   } catch (error) {
