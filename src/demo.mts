@@ -1,28 +1,25 @@
-import reorderList from './index.js';
+import reorderListPrompt, { Separator } from './index.js';
 
 /**
  * Demonstrates the use of the prompt.
  */
 async function demo() {
   try {
-    const answer = await reorderList({
+    const answer = await reorderListPrompt({
       message: 'Arrange list items',
-      loop: true,
+      pageSize: 7,
+      loop: false,
       choices: [
-        { value: 1 },
-        { value: 2 },
-        { value: 3 },
-        { value: 4 },
-        { value: 5 },
-        { value: 6 },
-        { value: 7 },
-        { value: 8 },
-        { value: 9 },
-        { value: 10 },
-        { value: 11 },
-        { value: 12 },
+        { name: '1', value: '1' },
+        { name: '2', value: '2' },
+        { name: '3', value: '3' },
+        new Separator(),
+        { name: '4', value: '4' },
+        new Separator(),
+        { name: '5', value: '5', disabled: true },
+        { name: '6', value: '6' },
+        { name: '7', value: '7' },
       ],
-      theme: { helpMode: 'always' },
     });
     console.log(`Answer: ${answer.join(', ')}`);
   } catch (error) {

@@ -1,12 +1,12 @@
 {
-  "name": "inquirer-sortable-list",
+  "name": "inquirer-reorder-list",
   "version": "0.0.0",
   "license": "MIT",
   "author": "Jari Ikonen",
   "contributors": [
     "Simon Boudrias <admin@simonboudrias.com>"
   ],
-  "description": "Inquirer sortable list prompt",
+  "description": "Inquirer reorder list prompt. An inquirer prompt that allows you to reorder a list of items.",
   "exports": {
     "./package.json": "./package.json",
     ".": {

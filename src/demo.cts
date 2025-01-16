@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/prefer-module */
 'use strict';
-const checkbox = require('./index.js').default;
+const reorderListPrompt = require('./index.js').default;
 const Separator = require('./index.js').Separator;
 
 /**
@@ -8,10 +8,10 @@ const Separator = require('./index.js').Separator;
  */
 async function demo() {
   try {
-    const answer = await checkbox({
+    const answer = await reorderListPrompt({
       message: 'Arrange list items',
       pageSize: 7,
-      loop: true,
+      loop: false,
       choices: [
         { name: '1', value: '1' },
         { name: '2', value: '2' },

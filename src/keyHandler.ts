@@ -5,7 +5,7 @@ import {
   KeypressEvent,
   Status,
 } from '@inquirer/core';
-import { CheckboxConfig, KeyEvent, NormalizedChoice } from './types.js';
+import { ReorderListConfig, KeyEvent, NormalizedChoice } from './types.js';
 import {
   check,
   doNotMove,
@@ -46,7 +46,7 @@ export function keyHandler<Value>(
   setError: (newValue?: string) => void,
   setStatus: (newValue: Status) => void,
   done: (value: Array<Value>) => void,
-  loop: CheckboxConfig<Value>['loop'],
+  loop: ReorderListConfig<Value>['loop'],
   active: number,
   setActive: (newValue: number) => void,
   bounds: {

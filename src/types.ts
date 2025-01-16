@@ -1,7 +1,7 @@
 import { Separator, Theme } from '@inquirer/core';
 import type { PartialDeep } from '@inquirer/type';
 
-export type CheckboxTheme = {
+export type ReorderListTheme = {
   icon: {
     checked: string;
     unchecked: string;
@@ -34,7 +34,7 @@ export type NormalizedChoice<Value> = {
   checked: boolean;
 };
 
-export type CheckboxConfig<
+export type ReorderListConfig<
   Value,
   ChoicesObject =
     | ReadonlyArray<string | Separator>
@@ -48,7 +48,7 @@ export type CheckboxConfig<
     ? ChoicesObject
     : ReadonlyArray<Choice<Value> | Separator>;
   loop?: boolean;
-  theme?: PartialDeep<Theme<CheckboxTheme>>;
+  theme?: PartialDeep<Theme<ReorderListTheme>>;
 };
 
 export interface KeyEvent {

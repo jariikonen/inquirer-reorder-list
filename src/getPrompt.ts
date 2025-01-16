@@ -1,10 +1,10 @@
 import type { Prettify } from '@inquirer/type';
 import { type Theme, type Status } from '@inquirer/core';
 import ansiEscapes from 'ansi-escapes';
-import { CheckboxConfig, CheckboxTheme, NormalizedChoice } from './types.js';
+import { ReorderListConfig, ReorderListTheme, NormalizedChoice } from './types.js';
 
 function getHelpTips<Value>(
-  theme: Prettify<Theme<CheckboxTheme>>,
+  theme: Prettify<Theme<ReorderListTheme>>,
   showHelpTip: boolean,
   instructions: string | boolean | undefined,
   items: readonly NormalizedChoice<Value>[],
@@ -68,7 +68,7 @@ function getHelpTips<Value>(
  * @returns The full output of the prompt to be rendered in a string.
  */
 export function getPrompt<Value>(
-  theme: Prettify<Theme<CheckboxTheme>>,
+  theme: Prettify<Theme<ReorderListTheme>>,
   showHelpTip: boolean,
   instructions: string | boolean | undefined,
   items: readonly NormalizedChoice<Value>[],
@@ -81,7 +81,7 @@ export function getPrompt<Value>(
   },
   errorMsg: string | undefined,
   prefix: string,
-  config: CheckboxConfig<Value>,
+  config: ReorderListConfig<Value>,
   status: Status,
   page: string,
   //debugMsg: string,

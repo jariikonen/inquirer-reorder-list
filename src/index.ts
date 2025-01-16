@@ -14,11 +14,16 @@ import {
 import colors from 'yoctocolors-cjs';
 import figures from '@inquirer/figures';
 import { getPrompt } from './getPrompt.js';
-import { CheckboxTheme, Choice, CheckboxConfig, NormalizedChoice } from './types.js';
+import {
+  ReorderListTheme,
+  Choice,
+  ReorderListConfig,
+  NormalizedChoice,
+} from './types.js';
 import { renderItem } from './renderItem.js';
 import { keyHandler } from './keyHandler.js';
 
-const checkboxTheme: CheckboxTheme = {
+const ReorderListTheme: ReorderListTheme = {
   icon: {
     checked: colors.green(figures.circleFilled),
     unchecked: figures.circle,
@@ -82,9 +87,9 @@ function normalizeChoices<Value>(
  * The rendering function wrapped into a createPrompt() function.
  */
 export default createPrompt(
-  <Value>(config: CheckboxConfig<Value>, done: (value: Array<Value>) => void) => {
+  <Value>(config: ReorderListConfig<Value>, done: (value: Array<Value>) => void) => {
     const { instructions, pageSize = 7, loop = true } = config;
-    const theme = makeTheme<CheckboxTheme>(checkboxTheme, config.theme);
+    const theme = makeTheme<ReorderListTheme>(ReorderListTheme, config.theme);
     const firstRender = useRef(true);
     const [status, setStatus] = useState<Status>('idle');
     const prefix = usePrefix({ status, theme });

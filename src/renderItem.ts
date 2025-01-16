@@ -1,6 +1,6 @@
 import { Theme } from '@inquirer/core';
 import { Prettify } from '@inquirer/type';
-import { CheckboxTheme, NormalizedChoice } from './types.js';
+import { ReorderListTheme, NormalizedChoice } from './types.js';
 
 /**
  * Renders a choice item styled according to the theme being used.
@@ -19,7 +19,7 @@ export function renderItem<Value>(
     index: number;
     isActive: boolean;
   },
-  theme: Prettify<Theme<CheckboxTheme>>,
+  theme: Prettify<Theme<ReorderListTheme>>,
   descriptionRef: {
     current: string | undefined;
   },
