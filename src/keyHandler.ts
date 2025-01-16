@@ -54,13 +54,9 @@ export function keyHandler<Value>(
     last: number;
   },
   setShowHelpTip: (newValue: boolean) => void,
-  //setDebug: (newValue: string) => void,
 ) {
   // cast to KeyEvent to get access to all the keys of the event
   const key = keypressEvent as KeyEvent;
-  /*setDebug(
-    `name: ${key.name}, code: ${key.code}, sequence: ${key.sequence}, ctrl: ${key.ctrl}, meta: ${key.meta}, shift: ${key.shift}`,
-  );*/
   setShowHelpTip(false);
   if (isHelpKey(key)) {
     setShowHelpTip(true);

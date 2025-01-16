@@ -72,17 +72,6 @@ function normalizeChoices<Value>(
   });
 }
 
-/*function createAddToDebugMsg(debugMsg: string, setDebug: (newValue: string) => void) {
-  return (newMsg: string, newLine = false) => {
-    const separator = newLine ? '\n' : ', ';
-    if (debugMsg) {
-      setDebug(`${debugMsg}${separator}<${newMsg}>`);
-    } else {
-      setDebug(`<${newMsg}>`);
-    }
-  };
-}*/
-
 /**
  * The rendering function wrapped into a createPrompt() function.
  */
@@ -113,8 +102,6 @@ export default createPrompt(
     const [active, setActive] = useState(bounds.first);
     const [showHelpTip, setShowHelpTip] = useState(true);
     const [errorMsg, setError] = useState<string>();
-    //const [debugMsg, setDebug] = useState<string>('');
-    // const addToDebug = createAddToDebugMsg(debugMsg, setDebug);
 
     useKeypress((key) =>
       keyHandler(
@@ -129,7 +116,6 @@ export default createPrompt(
         setActive,
         bounds,
         setShowHelpTip,
-        //setDebug,
       ),
     );
 
@@ -156,7 +142,6 @@ export default createPrompt(
       config,
       status,
       page,
-      //debugMsg,
     );
   },
 );

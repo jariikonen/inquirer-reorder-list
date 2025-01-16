@@ -84,7 +84,6 @@ export function getPrompt<Value>(
   config: ReorderListConfig<Value>,
   status: Status,
   page: string,
-  //debugMsg: string,
 ) {
   const message = theme.style.message(config.message, status);
 
@@ -109,8 +108,6 @@ export function getPrompt<Value>(
   if (errorMsg) {
     error = `\n${theme.style.error(errorMsg)}`;
   }
-
-  //const debugOutput = `\n${debugMsg}`;
 
   return `${prefix} ${message}${helpTipTop}\n${page}${helpTipBottom}${choiceDescription}${error}${ansiEscapes.cursorHide}`;
 }
