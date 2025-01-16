@@ -6,7 +6,7 @@
   "contributors": [
     "Simon Boudrias <admin@simonboudrias.com>"
   ],
-  "description": "Inquirer reorder list prompt. An inquirer prompt that allows you to reorder a list of items.",
+  "description": "Simple interactive command line prompt that allows you to reorder a list of items. Made with Inquirer.js and based on @inquirer/checkbox.",
   "exports": {
     "./package.json": "./package.json",
     ".": {
