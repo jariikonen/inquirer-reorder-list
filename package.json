@@ -30,7 +30,8 @@
     "attw": "attw --pack",
     "tsc": "tshy",
     "test": "vitest --run",
-    "dev": "tshy --watch"
+    "dev": "tshy --watch",
+    "prepare": "if [ -z $CI ]; then husky; fi"
   },
   "dependencies": {
     "@inquirer/core": "^10.0.0",
@@ -52,6 +53,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-unicorn": "^56.0.0",
     "globals": "^15.11.0",
+    "husky": "^9.1.7",
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "tshy": "^3.0.2",
