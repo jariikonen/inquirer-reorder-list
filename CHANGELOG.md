@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/jariikonen/inquirer-reorder-list/compare/inquirer-reorder-list-v0.1.0...inquirer-reorder-list-v0.1.1) (2025-01-30)
+
+
+### Features
+
+* add possibility to set a header for the list ([a367f9e](https://github.com/jariikonen/inquirer-reorder-list/commit/a367f9efec844dd6ddc2b00396d08a93a5e0055b))
+
 ## [0.1.0](https://github.com/jariikonen/inquirer-reorder-list/compare/inquirer-reorder-list-v0.0.1...inquirer-reorder-list-v0.1.0) (2025-01-22)
 
 
