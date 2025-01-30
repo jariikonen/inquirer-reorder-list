@@ -41,7 +41,6 @@ export type ReorderListConfig<
     | ReadonlyArray<Choice<Value> | Separator>,
 > = {
   message: string;
-  prefix?: string;
   pageSize?: number;
   instructions?: string | boolean;
   header?: string;
