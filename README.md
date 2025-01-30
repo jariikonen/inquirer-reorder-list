@@ -35,8 +35,9 @@ const answer = await reorderListPrompt({
 
 | Property | Type                    | Required | Description                                                                                                                                 |
 | -------- | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| message  | `string`                | yes      | The question to ask                                                                                                                         |
+| message  | `string`                | yes      | The question to ask.                                                                                                                        |
 | choices  | `Choice[]`              | yes      | List of the available choices.                                                                                                              |
+| header   | `string`                | no       | The header text to display.                                                                                                                 |
 | pageSize | `number`                | no       | By default, lists of choice longer than 7 will be paginated. Use this option to control how many choices will appear on the screen at once. |
 | loop     | `boolean`               | no       | Defaults to `true`. When set to `false`, the cursor will be constrained to the top and bottom of the choice list without looping.           |
 | theme    | [See Theming](#Theming) | no       | Customize look of the prompt.                                                                                                               |

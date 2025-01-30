@@ -82,6 +82,7 @@ export default createPrompt(
     const firstRender = useRef(true);
     const [status, setStatus] = useState<Status>('idle');
     const prefix = usePrefix({ status, theme });
+    const headerRef = useRef<string | undefined>(config.header);
     const [items, setItems] = useState<ReadonlyArray<NormalizedChoice<Value>>>(
       normalizeChoices(config.choices),
     );
@@ -133,6 +134,7 @@ export default createPrompt(
       theme,
       showHelpTip,
       instructions,
+      headerRef.current,
       items,
       pageSize,
       firstRender,

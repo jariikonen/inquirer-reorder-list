@@ -1,3 +1,4 @@
+import colors from 'yoctocolors-cjs';
 import reorderListPrompt, { Separator } from './index.js';
 
 /**
@@ -9,16 +10,19 @@ async function demo() {
       message: 'Arrange list items',
       pageSize: 7,
       loop: false,
+      header: colors.bold(colors.yellow('   Ingredient          Quantity  Unit')),
       choices: [
-        { name: '1', value: '1' },
-        { name: '2', value: '2' },
-        { name: '3', value: '3' },
+        { name: 'Flour                  15      dl', value: 'Flour' },
+        { name: 'Sugar                  2       dl', value: 'Sugar' },
+        { name: 'Eggs                   1       pc', value: 'Eggs' },
+        { name: 'Milk                   5       dl', value: 'Milk' },
+        { name: 'Butter                 200     g', value: 'Butter' },
+        { name: 'Yeast                  50      g', value: 'Yeast' },
+        new Separator('------------- Extras -------------'),
+        { name: 'Chocolate chips', value: 'Chocolate chips' },
+        { name: 'Nuts', value: 'Nuts' },
         new Separator(),
-        { name: '4', value: '4' },
-        new Separator(),
-        { name: '5', value: '5', disabled: true },
-        { name: '6', value: '6' },
-        { name: '7', value: '7' },
+        { name: 'Salt', value: 'Salt', disabled: true },
       ],
     });
     console.log(`Answer: ${answer.join(', ')}`);

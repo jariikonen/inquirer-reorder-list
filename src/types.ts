@@ -44,6 +44,7 @@ export type ReorderListConfig<
   prefix?: string;
   pageSize?: number;
   instructions?: string | boolean;
+  header?: string;
   choices: ChoicesObject extends ReadonlyArray<string | Separator>
     ? ChoicesObject
     : ReadonlyArray<Choice<Value> | Separator>;

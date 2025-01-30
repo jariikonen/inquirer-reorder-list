@@ -54,6 +54,7 @@ function getHelpTips<Value>(
  * @param showHelpTip Boolean indicating whether the help tip is shown or not.
  * @param instructions Instructions from the config. Replaces the helpTipTop if
  *    set.
+ * @param header Header text to be displayed.
  * @param items Choice list items.
  * @param pageSize Number of choices rows to display at a time.
  * @param firstRender A ref object containing a boolean indicating whether this
@@ -71,6 +72,7 @@ export function getPrompt<Value>(
   theme: Prettify<Theme<ReorderListTheme>>,
   showHelpTip: boolean,
   instructions: string | boolean | undefined,
+  header: string | undefined,
   items: readonly NormalizedChoice<Value>[],
   pageSize: number,
   firstRender: {
@@ -89,6 +91,10 @@ export function getPrompt<Value>(
 
   if (status === 'done') {
     return `${prefix} ${message}`;
+  }
+
+  if (header) {
+    page = `${header}\n${page}`;
   }
 
   const [helpTipTop, helpTipBottom] = getHelpTips(

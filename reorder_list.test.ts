@@ -4281,4 +4281,49 @@ describe('reorder list prompt', () => {
       expect(getScreen()).toMatchInlineSnapshot(`"✔ Arrange list items"`);
     });
   });
+
+  describe('header', () => {
+    it('should display header', async () => {
+      const { answer, events, getScreen } = await render(reorderList, {
+        message: 'Arrange list items',
+        pageSize: 7,
+        loop: false,
+        header: 'Header',
+        choices: numberedChoicesLong,
+      });
+
+      expect(getScreen()).toMatchInlineSnapshot(`
+        "? Arrange list items (<?> help, <space> select, <a> toggle all, <i> invert
+        selection, <ctrl/shift/meta + up/j, down/k, pgup/t or pgdown/b> move selected
+        items, <ctrl/shift/meta + left/h or right/l> move single items, <m or M> move
+        selected above or below cursor, <enter> proceed)
+        Header
+        ❯◯ 1
+         ◯ 2
+         ◯ 3
+         ◯ 4
+         ◯ 5
+         ◯ 6
+         ◯ 7
+        (Use arrow keys to reveal more choices)"
+      `);
+
+      events.keypress('down');
+      expect(getScreen()).toMatchInlineSnapshot(`
+        "? Arrange list items
+        Header
+         ◯ 1
+        ❯◯ 2
+         ◯ 3
+         ◯ 4
+         ◯ 5
+         ◯ 6
+         ◯ 7"
+      `);
+
+      events.keypress('enter');
+      await expect(answer).resolves.toEqual(originalOrderLong);
+      expect(getScreen()).toMatchInlineSnapshot(`"✔ Arrange list items"`);
+    });
+  });
 });
